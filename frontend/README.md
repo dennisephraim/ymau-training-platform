@@ -54,6 +54,8 @@ Traditional online courses face a common issue: students skip through videos to 
 | **Database** | Cloud Firestore | NoSQL document database |
 | **Storage** | Firebase Storage | Video and file storage |
 | **Video Player** | Video.js | Custom player with seek controls |
+| **PDF Generation** | @react-pdf/renderer | Certificate PDF creation |
+| **QR Codes** | qrcode | Verification QR code generation |
 
 ---
 
@@ -87,6 +89,14 @@ Students can join courses through:
 2. **Request & Approval** - Student requests, instructor approves
 3. **Direct Assignment** - Instructor adds student directly
 
+### Certificates
+
+Upon completing all chapters of a course:
+1. **Auto-Generation**: System creates a professional PDF certificate
+2. **QR Code Verification**: Each certificate includes a scannable QR code
+3. **Public Verification**: Anyone can verify at `/verify/[code]`
+4. **Unique Codes**: Format `YMAU-XXXX-XXXX` for easy sharing
+
 ---
 
 ## Project Structure
@@ -96,15 +106,18 @@ frontend/src/
 ├── app/                    # Next.js App Router pages
 │   ├── dashboard/          # Student pages
 │   │   ├── courses/        # Enrolled courses & viewer
+│   │   ├── certificates/   # View & download certificates
 │   │   ├── browse/         # Browse available courses
 │   │   └── enroll/         # Join via code
 │   ├── instructor/         # Instructor pages
 │   │   └── courses/        # Course management
 │   ├── admin/              # Admin pages
+│   ├── verify/[code]/      # Public certificate verification
 │   └── login/              # Authentication
 ├── components/
 │   ├── ui/                 # Reusable UI components
 │   ├── video/              # Video player components
+│   ├── certificates/       # Certificate PDF & generation
 │   ├── auth/               # Authentication context
 │   ├── courses/            # Course-related components
 │   └── layout/             # Layout components
@@ -193,7 +206,7 @@ This project is under active development. See [CHANGELOG.md](./CHANGELOG.md) for
 | Phase 2: Course Management | Complete | CRUD operations, video upload |
 | Phase 3: Enrollment System | Complete | Codes, requests, direct enrollment |
 | Phase 4: Video Player | Complete | Custom player, progress tracking |
-| Phase 5: Certificates | Pending | Auto-generation, templates, verification |
+| Phase 5: Certificates | Complete | Auto-generation, QR codes, verification |
 | Phase 6: Analytics | Pending | Dashboards, user management |
 
 ---

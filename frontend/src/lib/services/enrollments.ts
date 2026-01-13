@@ -48,6 +48,20 @@ export async function getEnrollment(enrollmentId: string): Promise<Enrollment | 
   };
 }
 
+export async function markEnrollmentCompleted(
+  enrollmentId: string,
+  certificateId: string
+): Promise<void> {
+  if (!db) throw new Error('Firestore not initialized');
+
+  const enrollmentRef = doc(db, 'enrollments', enrollmentId);
+  await updateDoc(enrollmentRef, {
+    status: 'completed',
+    completedAt: serverTimestamp(),
+    certificateId,
+  });
+}
+
 export async function getUserEnrollments(userId: string): Promise<Enrollment[]> {
   if (!db) throw new Error('Firestore not initialized');
 

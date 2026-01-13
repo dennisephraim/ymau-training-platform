@@ -6,6 +6,66 @@ This changelog is organized by development phases, with each phase representing 
 
 ---
 
+## [Phase 5] - Certificates
+
+**Status:** Complete
+
+### Summary
+Implemented a complete certificate system with auto-generated PDF certificates, QR code verification, and a public verification page.
+
+### Features Added
+- Auto-generated PDF certificates with professional YMAU design
+- QR code generation linking to verification page
+- Public verification page at `/verify/[code]`
+- Certificate listing page for students
+- Automatic certificate generation on course completion
+- Unique verification codes (format: `YMAU-XXXX-XXXX`)
+- Course completion modal with celebration UI
+- Certificate banner on completed courses
+
+### Files Created
+```
+src/types/
+└── certificate.ts           # Certificate and template types
+
+src/lib/services/
+└── certificates.ts          # Certificate CRUD, QR codes, verification
+
+src/components/certificates/
+├── CertificatePDF.tsx       # PDF template using @react-pdf/renderer
+├── CertificateGenerator.tsx # Generate and download certificates
+└── index.ts                 # Component exports
+
+src/app/verify/[code]/
+└── page.tsx                 # Public certificate verification page
+```
+
+### Files Modified
+```
+src/app/dashboard/certificates/page.tsx  # Full certificate listing
+src/app/dashboard/courses/[enrollmentId]/page.tsx  # Completion detection & modal
+src/lib/services/enrollments.ts          # Added markEnrollmentCompleted()
+src/types/index.ts                       # Added certificate exports
+package.json                             # Added @react-pdf/renderer, qrcode, date-fns
+```
+
+### Technical Details
+- **PDF Generation**: Uses @react-pdf/renderer for client-side PDF creation
+- **QR Codes**: Generated with qrcode library, embedded in PDF
+- **Verification Codes**: Random alphanumeric, avoids confusing characters (0/O, 1/I)
+- **Storage**: PDFs stored in Firebase Storage at `certificates/{id}.pdf`
+- **Completion Trigger**: Checks after each chapter completion if course is 100% done
+
+### Certificate PDF Features
+- Professional landscape A4 layout
+- YMAU branding with decorative borders
+- Student name, course name, date of issue
+- QR code for instant verification
+- Verification code for manual lookup
+- Issuer signature section
+
+---
+
 ## [Phase 4] - Video Player & Progress Tracking
 
 **Status:** Complete
@@ -207,12 +267,6 @@ src/lib/utils/
 
 ## Upcoming Phases
 
-### [Phase 5] - Certificates (Pending)
-- Auto-generated PDF certificates with QR codes
-- Custom template upload by instructors
-- Public verification page at `/verify/[code]`
-- Certificate storage in Firebase Storage
-
 ### [Phase 6] - Analytics & Polish (Pending)
 - Instructor dashboard with class progress
 - Admin user management interface
@@ -232,6 +286,8 @@ src/lib/utils/
 | Video Player | `components/video/VideoPlayer.tsx`, `lib/hooks/useVideoProgress.ts` |
 | Progress Tracking | `lib/services/progress.ts`, `types/progress.ts` |
 | Enrollments | `lib/services/enrollments.ts`, `app/dashboard/enroll/` |
+| Certificates | `lib/services/certificates.ts`, `components/certificates/` |
+| Verification | `app/verify/[code]/page.tsx`, `lib/services/certificates.ts` |
 
 ### Database Collections
 
@@ -249,4 +305,4 @@ src/lib/utils/
 
 ---
 
-*Last updated: Phase 4 completion*
+*Last updated: Phase 5 completion*
