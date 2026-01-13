@@ -31,6 +31,23 @@ function toDate(timestamp: Timestamp | Date | null): Date | null {
 
 // ============ ENROLLMENTS ============
 
+export async function getEnrollment(enrollmentId: string): Promise<Enrollment | null> {
+  if (!db) throw new Error('Firestore not initialized');
+
+  const enrollmentRef = doc(db, 'enrollments', enrollmentId);
+  const snapshot = await getDoc(enrollmentRef);
+
+  if (!snapshot.exists()) return null;
+
+  const data = snapshot.data() as EnrollmentDocument;
+  return {
+    id: snapshot.id,
+    ...data,
+    enrolledAt: toDate(data.enrolledAt as any) || new Date(),
+    completedAt: toDate(data.completedAt as any),
+  };
+}
+
 export async function getUserEnrollments(userId: string): Promise<Enrollment[]> {
   if (!db) throw new Error('Firestore not initialized');
 

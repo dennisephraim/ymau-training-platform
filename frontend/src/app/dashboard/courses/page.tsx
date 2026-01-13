@@ -8,12 +8,15 @@ import { BookOpen, Clock, Video, Play, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthContext';
 import { Enrollment } from '@/types/enrollment';
 import { Course } from '@/types/course';
+import { CourseProgress } from '@/types/progress';
 import * as enrollmentService from '@/lib/services/enrollments';
 import * as courseService from '@/lib/services/courses';
+import * as progressService from '@/lib/services/progress';
 import { formatDuration } from '@/lib/utils/formatters';
 
 interface EnrolledCourse extends Enrollment {
   course: Course | null;
+  progress: CourseProgress | null;
 }
 
 export default function MyCoursesPage() {
@@ -28,11 +31,14 @@ export default function MyCoursesPage() {
       setLoading(true);
       const userEnrollments = await enrollmentService.getUserEnrollments(user.id);
 
-      // Fetch course details for each enrollment
+      // Fetch course details and progress for each enrollment
       const enrichedEnrollments = await Promise.all(
         userEnrollments.map(async (enrollment) => {
-          const course = await courseService.getCourse(enrollment.courseId);
-          return { ...enrollment, course };
+          const [course, progress] = await Promise.all([
+            courseService.getCourse(enrollment.courseId),
+            progressService.getCourseProgress(enrollment.id, enrollment.courseId),
+          ]);
+          return { ...enrollment, course, progress };
         })
       );
 
@@ -117,13 +123,16 @@ export default function MyCoursesPage() {
 }
 
 function EnrolledCourseCard({ enrollment }: { enrollment: EnrolledCourse }) {
-  const { course } = enrollment;
+  const { course, progress } = enrollment;
 
   if (!course) {
     return null;
   }
 
   const isCompleted = enrollment.status === 'completed';
+  const progressPercentage = progress?.overallPercentage || 0;
+  const completedChapters = progress?.completedChapters || 0;
+  const totalChapters = progress?.totalChapters || course.chapterCount;
 
   return (
     <Card className="relative overflow-hidden">
@@ -145,7 +154,7 @@ function EnrolledCourseCard({ enrollment }: { enrollment: EnrolledCourse }) {
         <div className="flex items-center space-x-4 text-sm text-gray-500">
           <div className="flex items-center">
             <Video className="h-4 w-4 mr-1" />
-            {course.chapterCount} {course.chapterCount === 1 ? 'chapter' : 'chapters'}
+            {completedChapters}/{totalChapters} chapters
           </div>
           <div className="flex items-center">
             <Clock className="h-4 w-4 mr-1" />
@@ -153,18 +162,21 @@ function EnrolledCourseCard({ enrollment }: { enrollment: EnrolledCourse }) {
           </div>
         </div>
 
-        {/* Progress bar placeholder - will be implemented in Phase 4 */}
+        {/* Progress bar */}
         <div className="space-y-1">
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-500">Progress</span>
-            <span className="font-medium">0%</span>
+            <span className="font-medium">{progressPercentage.toFixed(0)}%</span>
           </div>
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div className="h-full bg-blue-600" style={{ width: '0%' }} />
+            <div
+              className="h-full bg-blue-600 transition-all duration-300"
+              style={{ width: `${progressPercentage}%` }}
+            />
           </div>
         </div>
 
-        <Link href={`/dashboard/courses/${course.id}`}>
+        <Link href={`/dashboard/courses/${enrollment.id}`}>
           <Button className="w-full">
             <Play className="h-4 w-4 mr-2" />
             {isCompleted ? 'Review Course' : 'Continue Learning'}

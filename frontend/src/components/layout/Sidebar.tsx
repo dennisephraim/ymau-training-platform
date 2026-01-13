@@ -12,6 +12,7 @@ import {
   PlusCircle,
   Home,
   UserPlus,
+  Search,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/components/auth/AuthContext';
@@ -38,6 +39,12 @@ const navItems: NavItem[] = [
     label: 'Join Course',
     href: '/dashboard/enroll',
     icon: UserPlus,
+    roles: ['student'],
+  },
+  {
+    label: 'Browse Courses',
+    href: '/dashboard/browse',
+    icon: Search,
     roles: ['student'],
   },
   {
