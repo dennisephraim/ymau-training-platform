@@ -6,6 +6,74 @@ This changelog is organized by development phases, with each phase representing 
 
 ---
 
+## [Phase 6] - Analytics & User Management
+
+**Status:** Complete
+
+### Summary
+Implemented comprehensive analytics dashboards for instructors, full admin user management capabilities, and enhanced the student dashboard with real-time statistics.
+
+### Features Added
+- Instructor analytics dashboard with course performance metrics
+- Per-course breakdowns showing enrollments, completion rates, certificates
+- Admin user management with search and role filtering
+- Role promotion/demotion system (student/instructor/admin)
+- User account activation/deactivation
+- Platform-wide statistics display
+- Enhanced student dashboard with real enrollment data
+- Recent courses section with progress indicators
+- Getting started guide for new users
+
+### Files Created
+```
+src/lib/services/
+└── analytics.ts              # Analytics service with instructor & platform stats
+```
+
+### Files Modified
+```
+src/app/instructor/analytics/page.tsx  # Full analytics dashboard with course breakdown
+src/app/admin/users/page.tsx           # Complete user management interface
+src/app/dashboard/page.tsx             # Real stats, recent courses, role-based content
+src/lib/services/users.ts              # Added updateUserRole, updateUserStatus, getUsersByIds
+```
+
+### Technical Details
+- **Course Analytics**: Aggregates enrollment counts, completion rates, average progress
+- **Platform Stats**: Admin-only view of user counts by role, course counts, certificates
+- **User Management**: Dropdown actions menu with role changes and status toggles
+- **Safety Guards**: Cannot modify own role or deactivate own account
+- **Real-time Data**: Dashboard fetches actual enrollments, progress, and certificates
+
+### Analytics Service Features
+```typescript
+// Instructor course analytics
+interface CourseAnalytics {
+  course: Course;
+  totalEnrollments: number;
+  activeEnrollments: number;
+  completedEnrollments: number;
+  averageProgress: number;
+  certificatesIssued: number;
+}
+
+// Platform-wide stats (admin only)
+interface PlatformStats {
+  totalUsers: number;
+  studentCount: number;
+  instructorCount: number;
+  adminCount: number;
+  totalCourses: number;
+  publishedCourses: number;
+  totalEnrollments: number;
+  activeEnrollments: number;
+  completedEnrollments: number;
+  certificatesIssued: number;
+}
+```
+
+---
+
 ## [Phase 5] - Certificates
 
 **Status:** Complete
@@ -265,13 +333,15 @@ src/lib/utils/
 
 ---
 
-## Upcoming Phases
+## Project Status
 
-### [Phase 6] - Analytics & Polish (Pending)
-- Instructor dashboard with class progress
-- Admin user management interface
-- Role promotion/demotion
-- Final testing and bug fixes
+All planned phases are now complete. The platform includes:
+- Full authentication with role-based access
+- Course and chapter management with video upload
+- Flexible enrollment system (codes, requests, direct)
+- Anti-skip video player with segment-based tracking
+- Auto-generated certificates with QR verification
+- Analytics dashboards and user management
 
 ---
 
@@ -288,6 +358,8 @@ src/lib/utils/
 | Enrollments | `lib/services/enrollments.ts`, `app/dashboard/enroll/` |
 | Certificates | `lib/services/certificates.ts`, `components/certificates/` |
 | Verification | `app/verify/[code]/page.tsx`, `lib/services/certificates.ts` |
+| Analytics | `lib/services/analytics.ts`, `app/instructor/analytics/` |
+| User Management | `lib/services/users.ts`, `app/admin/users/` |
 
 ### Database Collections
 
@@ -305,4 +377,4 @@ src/lib/utils/
 
 ---
 
-*Last updated: Phase 5 completion*
+*Last updated: Phase 6 completion - All phases complete*

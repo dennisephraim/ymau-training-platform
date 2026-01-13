@@ -66,6 +66,28 @@ export async function getCourse(courseId: string): Promise<Course | null> {
   };
 }
 
+export async function getInstructorCourses(instructorId: string): Promise<Course[]> {
+  if (!db) throw new Error('Firestore not initialized');
+
+  const coursesRef = collection(db, 'courses');
+  const q = query(
+    coursesRef,
+    where('instructorId', '==', instructorId),
+    orderBy('createdAt', 'desc')
+  );
+  const snapshot = await getDocs(q);
+
+  return snapshot.docs.map((doc) => {
+    const data = doc.data() as CourseDocument;
+    return {
+      id: doc.id,
+      ...data,
+      createdAt: toDate(data.createdAt as any),
+      updatedAt: toDate(data.updatedAt as any),
+    };
+  });
+}
+
 export async function getCourseWithChapters(courseId: string): Promise<CourseWithChapters | null> {
   if (!db) throw new Error('Firestore not initialized');
 

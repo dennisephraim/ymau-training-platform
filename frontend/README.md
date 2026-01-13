@@ -37,9 +37,11 @@ Traditional online courses face a common issue: students skip through videos to 
 - Track individual student progress
 
 ### For Administrators
-- Manage all users and roles
-- Promote users to instructor status
-- System-wide analytics and oversight
+- View platform-wide statistics (users, courses, enrollments)
+- Manage all users with search and filtering
+- Promote/demote users between roles (student/instructor/admin)
+- Activate/deactivate user accounts
+- Full oversight of all platform activity
 
 ---
 
@@ -207,7 +209,7 @@ This project is under active development. See [CHANGELOG.md](./CHANGELOG.md) for
 | Phase 3: Enrollment System | Complete | Codes, requests, direct enrollment |
 | Phase 4: Video Player | Complete | Custom player, progress tracking |
 | Phase 5: Certificates | Complete | Auto-generation, QR codes, verification |
-| Phase 6: Analytics | Pending | Dashboards, user management |
+| Phase 6: Analytics & Admin | Complete | Dashboards, user management, role control |
 
 ---
 
