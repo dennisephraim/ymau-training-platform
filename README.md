@@ -104,31 +104,35 @@ Upon completing all chapters of a course:
 ## Project Structure
 
 ```
-frontend/src/
-├── app/                    # Next.js App Router pages
-│   ├── dashboard/          # Student pages
-│   │   ├── courses/        # Enrolled courses & viewer
-│   │   ├── certificates/   # View & download certificates
-│   │   ├── browse/         # Browse available courses
-│   │   └── enroll/         # Join via code
-│   ├── instructor/         # Instructor pages
-│   │   └── courses/        # Course management
-│   ├── admin/              # Admin pages
-│   ├── verify/[code]/      # Public certificate verification
-│   └── login/              # Authentication
-├── components/
-│   ├── ui/                 # Reusable UI components
-│   ├── video/              # Video player components
-│   ├── certificates/       # Certificate PDF & generation
-│   ├── auth/               # Authentication context
-│   ├── courses/            # Course-related components
-│   └── layout/             # Layout components
-├── lib/
-│   ├── firebase/           # Firebase configuration
-│   ├── services/           # Business logic & API calls
-│   ├── hooks/              # Custom React hooks
-│   └── utils/              # Utility functions
-└── types/                  # TypeScript type definitions
+ymau-training-platform/
+├── src/
+│   ├── app/                    # Next.js App Router pages
+│   │   ├── dashboard/          # Student pages
+│   │   │   ├── courses/        # Enrolled courses & viewer
+│   │   │   ├── certificates/   # View & download certificates
+│   │   │   ├── browse/         # Browse available courses
+│   │   │   └── enroll/         # Join via code
+│   │   ├── instructor/         # Instructor pages
+│   │   │   └── courses/        # Course management
+│   │   ├── admin/              # Admin pages
+│   │   ├── verify/[code]/      # Public certificate verification
+│   │   └── login/              # Authentication
+│   ├── components/
+│   │   ├── ui/                 # Reusable UI components
+│   │   ├── video/              # Video player components
+│   │   ├── certificates/       # Certificate PDF & generation
+│   │   ├── auth/               # Authentication context
+│   │   ├── courses/            # Course-related components
+│   │   └── layout/             # Layout components
+│   ├── lib/
+│   │   ├── firebase/           # Firebase configuration
+│   │   ├── services/           # Business logic & API calls
+│   │   ├── hooks/              # Custom React hooks
+│   │   └── utils/              # Utility functions
+│   └── types/                  # TypeScript type definitions
+├── public/                     # Static assets
+├── package.json
+└── README.md
 ```
 
 ---
@@ -146,13 +150,13 @@ frontend/src/
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd ymau-training-platform/frontend
+cd ymau-training-platform
 
 # Install dependencies
 npm install
 
 # Set up environment variables
-cp .env.example .env.local
+cp .env.local.example .env.local
 # Edit .env.local with your Firebase credentials
 
 # Run development server
