@@ -88,10 +88,8 @@ export async function createCertificate(
   enrollmentId: string,
   courseId: string,
   studentId: string,
-  iterationId: string,
   studentName: string,
   courseName: string,
-  iterationName: string,
   issuerId: string,
   issuerName: string,
   templateId?: string | null
@@ -110,10 +108,8 @@ export async function createCertificate(
     enrollmentId,
     courseId,
     studentId,
-    iterationId,
     studentName,
     courseName,
-    iterationName,
     verificationCode,
     templateId: templateId || null,
     pdfUrl: null, // Will be set after PDF is generated

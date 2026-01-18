@@ -131,9 +131,6 @@ export default function VerifyPage({
                       <p className="font-medium text-gray-900">
                         {result.certificate.courseName}
                       </p>
-                      <p className="text-sm text-gray-600">
-                        {result.certificate.iterationName}
-                      </p>
                     </div>
                   </div>
 

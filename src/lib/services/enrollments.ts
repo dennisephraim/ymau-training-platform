@@ -20,7 +20,7 @@ import {
   EnrollmentRequestDocument,
   EnrollmentCode,
 } from '@/types/enrollment';
-import { getEnrollmentCodeByCode } from './iterations';
+import { getEnrollmentCodeByCode } from './enrollmentCodes';
 
 // Helper to convert Firestore timestamps to Date
 function toDate(timestamp: Timestamp | Date | null): Date | null {
@@ -84,13 +84,13 @@ export async function getUserEnrollments(userId: string): Promise<Enrollment[]> 
   });
 }
 
-export async function getIterationEnrollments(iterationId: string): Promise<Enrollment[]> {
+export async function getCourseEnrollments(courseId: string): Promise<Enrollment[]> {
   if (!db) throw new Error('Firestore not initialized');
 
   const enrollmentsRef = collection(db, 'enrollments');
   const q = query(
     enrollmentsRef,
-    where('iterationId', '==', iterationId),
+    where('courseId', '==', courseId),
     orderBy('enrolledAt', 'desc')
   );
   const snapshot = await getDocs(q);
@@ -107,7 +107,7 @@ export async function getIterationEnrollments(iterationId: string): Promise<Enro
 }
 
 export async function checkExistingEnrollment(
-  iterationId: string,
+  courseId: string,
   studentId: string
 ): Promise<Enrollment | null> {
   if (!db) throw new Error('Firestore not initialized');
@@ -115,17 +115,17 @@ export async function checkExistingEnrollment(
   const enrollmentsRef = collection(db, 'enrollments');
   const q = query(
     enrollmentsRef,
-    where('iterationId', '==', iterationId),
+    where('courseId', '==', courseId),
     where('studentId', '==', studentId)
   );
   const snapshot = await getDocs(q);
 
   if (snapshot.empty) return null;
 
-  const doc = snapshot.docs[0];
-  const data = doc.data() as EnrollmentDocument;
+  const docSnap = snapshot.docs[0];
+  const data = docSnap.data() as EnrollmentDocument;
   return {
-    id: doc.id,
+    id: docSnap.id,
     ...data,
     enrolledAt: toDate(data.enrolledAt as any) || new Date(),
     completedAt: toDate(data.completedAt as any),
@@ -158,7 +158,7 @@ export async function enrollWithCode(
   }
 
   // Check if already enrolled
-  const existing = await checkExistingEnrollment(enrollmentCode.iterationId, studentId);
+  const existing = await checkExistingEnrollment(enrollmentCode.courseId, studentId);
   if (existing) {
     return { success: false, error: 'You are already enrolled in this course' };
   }
@@ -166,7 +166,6 @@ export async function enrollWithCode(
   // Create enrollment
   const enrollmentsRef = collection(db, 'enrollments');
   const enrollmentData: EnrollmentDocument = {
-    iterationId: enrollmentCode.iterationId,
     courseId: enrollmentCode.courseId,
     studentId,
     enrolledAt: new Date(),
@@ -188,6 +187,12 @@ export async function enrollWithCode(
     useCount: increment(1),
   });
 
+  // Increment course enrolled count
+  const courseRef = doc(db, 'courses', enrollmentCode.courseId);
+  await updateDoc(courseRef, {
+    enrolledCount: increment(1),
+  });
+
   return {
     success: true,
     enrollment: {
@@ -198,7 +203,6 @@ export async function enrollWithCode(
 }
 
 export async function createDirectEnrollment(
-  iterationId: string,
   courseId: string,
   studentId: string,
   enrolledBy: string
@@ -206,14 +210,13 @@ export async function createDirectEnrollment(
   if (!db) throw new Error('Firestore not initialized');
 
   // Check if already enrolled
-  const existing = await checkExistingEnrollment(iterationId, studentId);
+  const existing = await checkExistingEnrollment(courseId, studentId);
   if (existing) {
     throw new Error('Student is already enrolled');
   }
 
   const enrollmentsRef = collection(db, 'enrollments');
   const enrollmentData: EnrollmentDocument = {
-    iterationId,
     courseId,
     studentId,
     enrolledAt: new Date(),
@@ -229,36 +232,63 @@ export async function createDirectEnrollment(
     enrolledAt: serverTimestamp(),
   });
 
+  // Increment course enrolled count
+  const courseRef = doc(db, 'courses', courseId);
+  await updateDoc(courseRef, {
+    enrolledCount: increment(1),
+  });
+
   return {
     id: docRef.id,
     ...enrollmentData,
   };
 }
 
+export async function withdrawEnrollment(enrollmentId: string): Promise<void> {
+  if (!db) throw new Error('Firestore not initialized');
+
+  const enrollmentRef = doc(db, 'enrollments', enrollmentId);
+  const enrollmentSnap = await getDoc(enrollmentRef);
+  
+  if (!enrollmentSnap.exists()) {
+    throw new Error('Enrollment not found');
+  }
+
+  const enrollment = enrollmentSnap.data() as EnrollmentDocument;
+
+  await updateDoc(enrollmentRef, {
+    status: 'withdrawn',
+  });
+
+  // Decrement course enrolled count
+  const courseRef = doc(db, 'courses', enrollment.courseId);
+  await updateDoc(courseRef, {
+    enrolledCount: increment(-1),
+  });
+}
+
 // ============ ENROLLMENT REQUESTS ============
 
 export async function createEnrollmentRequest(
-  iterationId: string,
   courseId: string,
   studentId: string
 ): Promise<EnrollmentRequest> {
   if (!db) throw new Error('Firestore not initialized');
 
   // Check if already enrolled
-  const existing = await checkExistingEnrollment(iterationId, studentId);
+  const existing = await checkExistingEnrollment(courseId, studentId);
   if (existing) {
     throw new Error('You are already enrolled in this course');
   }
 
   // Check if request already exists
-  const existingRequest = await getPendingRequest(iterationId, studentId);
+  const existingRequest = await getPendingRequest(courseId, studentId);
   if (existingRequest) {
     throw new Error('You already have a pending request for this course');
   }
 
   const requestsRef = collection(db, 'enrollmentRequests');
   const requestData: EnrollmentRequestDocument = {
-    iterationId,
     courseId,
     studentId,
     requestedAt: new Date(),
@@ -280,7 +310,7 @@ export async function createEnrollmentRequest(
 }
 
 export async function getPendingRequest(
-  iterationId: string,
+  courseId: string,
   studentId: string
 ): Promise<EnrollmentRequest | null> {
   if (!db) throw new Error('Firestore not initialized');
@@ -288,7 +318,7 @@ export async function getPendingRequest(
   const requestsRef = collection(db, 'enrollmentRequests');
   const q = query(
     requestsRef,
-    where('iterationId', '==', iterationId),
+    where('courseId', '==', courseId),
     where('studentId', '==', studentId),
     where('status', '==', 'pending')
   );
@@ -296,32 +326,32 @@ export async function getPendingRequest(
 
   if (snapshot.empty) return null;
 
-  const doc = snapshot.docs[0];
-  const data = doc.data() as EnrollmentRequestDocument;
+  const docSnap = snapshot.docs[0];
+  const data = docSnap.data() as EnrollmentRequestDocument;
   return {
-    id: doc.id,
+    id: docSnap.id,
     ...data,
     requestedAt: toDate(data.requestedAt as any) || new Date(),
     reviewedAt: toDate(data.reviewedAt as any),
   };
 }
 
-export async function getIterationRequests(iterationId: string): Promise<EnrollmentRequest[]> {
+export async function getCourseRequests(courseId: string): Promise<EnrollmentRequest[]> {
   if (!db) throw new Error('Firestore not initialized');
 
   const requestsRef = collection(db, 'enrollmentRequests');
   const q = query(
     requestsRef,
-    where('iterationId', '==', iterationId),
+    where('courseId', '==', courseId),
     where('status', '==', 'pending'),
     orderBy('requestedAt', 'desc')
   );
   const snapshot = await getDocs(q);
 
-  return snapshot.docs.map((doc) => {
-    const data = doc.data() as EnrollmentRequestDocument;
+  return snapshot.docs.map((docSnap) => {
+    const data = docSnap.data() as EnrollmentRequestDocument;
     return {
-      id: doc.id,
+      id: docSnap.id,
       ...data,
       requestedAt: toDate(data.requestedAt as any) || new Date(),
       reviewedAt: toDate(data.reviewedAt as any),
@@ -346,7 +376,6 @@ export async function approveRequest(
 
   // Create enrollment
   await createDirectEnrollment(
-    request.iterationId,
     request.courseId,
     request.studentId,
     reviewedBy

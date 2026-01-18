@@ -6,6 +6,7 @@ import { ArrowLeft, Plus, GripVertical, Edit, Trash2, Video, Clock } from 'lucid
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { VideoUpload } from '@/components/courses/VideoUpload';
 import { useCourse } from '@/lib/hooks/useCourses';
 import { Chapter } from '@/types/course';
 import * as courseService from '@/lib/services/courses';
@@ -215,8 +216,71 @@ function ChapterForm({
   const [durationSeconds, setDurationSeconds] = useState(
     chapter ? chapter.durationSeconds % 60 : 0
   );
+  const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(chapter?.videoUrl || null);
+  const [pendingVideoFile, setPendingVideoFile] = useState<File | null>(null);
+  const [pendingVideoPreview, setPendingVideoPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // For new chapters - store video file to upload after chapter creation
+  const [newChapterId, setNewChapterId] = useState<string | null>(null);
+
+  const handleVideoUploadComplete = async (videoUrl: string) => {
+    setCurrentVideoUrl(videoUrl);
+    setPendingVideoFile(null);
+    setPendingVideoPreview(null);
+    // Fetch updated chapter to get the auto-extracted duration
+    try {
+      const updatedCourse = await courseService.getCourseWithChapters(courseId);
+      const chapterId = chapter?.id || newChapterId;
+      const updatedChapter = updatedCourse?.chapters.find((c: Chapter) => c.id === chapterId);
+      if (updatedChapter) {
+        setDurationMinutes(Math.floor(updatedChapter.durationSeconds / 60));
+        setDurationSeconds(updatedChapter.durationSeconds % 60);
+      }
+    } catch (err) {
+      console.error('Error fetching updated chapter:', err);
+    }
+  };
+
+  // Handle video file selection for new chapters
+  const handleVideoFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('video/')) {
+        setError('Please select a valid video file');
+        return;
+      }
+      // Validate file size (500MB max)
+      if (file.size > 500 * 1024 * 1024) {
+        setError('Video file must be less than 500MB');
+        return;
+      }
+      setPendingVideoFile(file);
+      setPendingVideoPreview(URL.createObjectURL(file));
+      
+      // Try to get video duration
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      video.onloadedmetadata = () => {
+        URL.revokeObjectURL(video.src);
+        const duration = Math.round(video.duration);
+        setDurationMinutes(Math.floor(duration / 60));
+        setDurationSeconds(duration % 60);
+      };
+      video.src = URL.createObjectURL(file);
+    }
+  };
+
+  const clearPendingVideo = () => {
+    setPendingVideoFile(null);
+    if (pendingVideoPreview) {
+      URL.revokeObjectURL(pendingVideoPreview);
+      setPendingVideoPreview(null);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -238,8 +302,10 @@ function ChapterForm({
           description: description.trim(),
           durationSeconds: totalSeconds,
         });
+        onSaved();
       } else {
-        await courseService.createChapter(courseId, {
+        // Create the chapter first
+        const createdChapterId = await courseService.createChapter(courseId, {
           title: title.trim(),
           description: description.trim(),
           order: order ?? 0,
@@ -248,8 +314,27 @@ function ChapterForm({
           durationSeconds: totalSeconds,
           thumbnailUrl: null,
         });
+        
+        // If there's a pending video, upload it now
+        if (pendingVideoFile && createdChapterId) {
+          setNewChapterId(createdChapterId);
+          setUploadingVideo(true);
+          try {
+            const { uploadVideo } = await import('@/lib/services/storage');
+            const videoUrl = await uploadVideo(courseId, createdChapterId, pendingVideoFile);
+            await courseService.updateChapter(courseId, createdChapterId, {
+              videoUrl,
+              durationSeconds: totalSeconds,
+            });
+          } catch (uploadErr) {
+            console.error('Error uploading video:', uploadErr);
+            // Chapter was created, but video upload failed - still consider it a success
+            // User can edit and re-upload
+          }
+          setUploadingVideo(false);
+        }
+        onSaved();
       }
-      onSaved();
     } catch (err) {
       console.error('Error saving chapter:', err);
       setError('Failed to save chapter');
@@ -319,12 +404,80 @@ function ChapterForm({
             </p>
           </div>
 
+          {/* Video Upload Section - Only show when editing existing chapter */}
+          {chapter && (
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700">Chapter Video</label>
+              <VideoUpload
+                courseId={courseId}
+                chapterId={chapter.id}
+                currentVideoUrl={currentVideoUrl}
+                onUploadComplete={handleVideoUploadComplete}
+              />
+            </div>
+          )}
+
+          {/* Video Selection for New Chapters */}
+          {!chapter && (
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Chapter Video (Optional)</label>
+              {pendingVideoPreview ? (
+                <div className="space-y-2">
+                  <div className="relative rounded-lg overflow-hidden bg-gray-900 aspect-video">
+                    <video
+                      src={pendingVideoPreview}
+                      className="w-full h-full object-contain"
+                      controls
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600 truncate flex-1">
+                      {pendingVideoFile?.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={clearPendingVideo}
+                      className="ml-2 text-red-600 hover:text-red-700 font-medium"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-indigo-400 transition-colors">
+                  <Video className="mx-auto h-10 w-10 text-gray-400" />
+                  <div className="mt-2">
+                    <label
+                      htmlFor="video-upload-new"
+                      className="cursor-pointer text-indigo-600 hover:text-indigo-700 font-medium"
+                    >
+                      Select a video file
+                      <input
+                        id="video-upload-new"
+                        type="file"
+                        accept="video/*"
+                        onChange={handleVideoFileSelect}
+                        className="sr-only"
+                      />
+                    </label>
+                    <p className="mt-1 text-xs text-gray-500">
+                      MP4, WebM, or MOV up to 500MB
+                    </p>
+                  </div>
+                </div>
+              )}
+              <p className="text-xs text-gray-500">
+                You can also add or change the video later by editing the chapter.
+              </p>
+            </div>
+          )}
+
           <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
-            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={loading || uploadingVideo}>
               Cancel
             </Button>
-            <Button type="submit" isLoading={loading}>
-              {chapter ? 'Save Changes' : 'Add Chapter'}
+            <Button type="submit" isLoading={loading || uploadingVideo}>
+              {uploadingVideo ? 'Uploading Video...' : chapter ? 'Save Changes' : pendingVideoFile ? 'Create & Upload' : 'Add Chapter'}
             </Button>
           </div>
         </form>

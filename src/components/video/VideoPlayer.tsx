@@ -38,86 +38,107 @@ export function VideoPlayer({
     getMaxWatchedPosition(initialSegments)
   );
   const [isReady, setIsReady] = useState(false);
+  const [displayPosition, setDisplayPosition] = useState(0);
   const lastReportedPosition = useRef<number>(0);
   const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Calculate allowed seek position (can't skip ahead of watched content)
-  const getAllowedSeekPosition = useCallback(
-    (requestedTime: number): number => {
-      // Allow seeking anywhere that has been watched
-      const mergedSegments = mergeSegments(watchedSegments);
+  // Use refs to always have access to latest values in event handlers
+  const watchedSegmentsRef = useRef<WatchedSegment[]>(watchedSegments);
+  const currentSegmentStartRef = useRef<number | null>(currentSegmentStart);
+  const maxWatchedPositionRef = useRef<number>(maxWatchedPosition);
+  const onProgressRef = useRef(onProgress);
+  const onCompleteRef = useRef(onComplete);
+  const onTimeUpdateRef = useRef(onTimeUpdate);
 
-      // Check if the requested position is within any watched segment
-      for (const segment of mergedSegments) {
-        if (requestedTime >= segment.start && requestedTime <= segment.end) {
-          return requestedTime;
-        }
-      }
+  // Keep refs updated
+  useEffect(() => {
+    watchedSegmentsRef.current = watchedSegments;
+  }, [watchedSegments]);
 
-      // If not in a watched segment, find the closest allowed position
-      // Can seek to any position up to maxWatchedPosition
-      if (requestedTime <= maxWatchedPosition) {
-        return requestedTime;
-      }
+  useEffect(() => {
+    currentSegmentStartRef.current = currentSegmentStart;
+  }, [currentSegmentStart]);
 
-      // Otherwise, clamp to max watched position
-      return maxWatchedPosition;
-    },
-    [watchedSegments, maxWatchedPosition]
-  );
+  useEffect(() => {
+    maxWatchedPositionRef.current = maxWatchedPosition;
+  }, [maxWatchedPosition]);
 
-  // Handle seek attempts
+  useEffect(() => {
+    onProgressRef.current = onProgress;
+  }, [onProgress]);
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
+  useEffect(() => {
+    onTimeUpdateRef.current = onTimeUpdate;
+  }, [onTimeUpdate]);
+
+  // Track if chapter is completed (95%+ watched)
+  const isChapterCompleted = useCallback(() => {
+    const mergedSegments = mergeSegments(watchedSegmentsRef.current);
+    const totalWatched = mergedSegments.reduce((sum, seg) => sum + (seg.end - seg.start), 0);
+    return duration > 0 && (totalWatched / duration) >= 0.95;
+  }, [duration]);
+
+  // Handle seek attempts - NO skipping allowed until video is completed
   const handleSeek = useCallback(
-    (player: Player) => {
-      const currentTime = player.currentTime() || 0;
-      const allowedTime = getAllowedSeekPosition(currentTime);
+    (player: Player, previousTime: number) => {
+      const requestedTime = player.currentTime() || 0;
+      
+      // If chapter is completed, allow free seeking (rewatching)
+      if (isChapterCompleted()) {
+        return;
+      }
 
-      if (Math.abs(currentTime - allowedTime) > 0.5) {
-        // User tried to seek beyond allowed position
-        player.currentTime(allowedTime);
+      // Only allow seeking backwards (rewatching earlier parts)
+      // Cannot skip forward past the max watched position
+      if (requestedTime > maxWatchedPositionRef.current + 1) {
+        // User tried to skip ahead - prevent it
+        player.currentTime(maxWatchedPositionRef.current);
       }
     },
-    [getAllowedSeekPosition]
+    [isChapterCompleted]
   );
 
-  // Update progress tracking
+  // Track previous time for seek detection
+  const previousTimeRef = useRef<number>(0);
+
+  // Update progress tracking - uses refs to always have latest values
   const updateProgress = useCallback(() => {
     const player = playerRef.current;
     if (!player || !isReady) return;
 
     const currentTime = player.currentTime() || 0;
+    setDisplayPosition(currentTime);
 
-    // Update current segment
-    if (currentSegmentStart !== null) {
+    // Update current segment using refs for latest values
+    if (currentSegmentStartRef.current !== null) {
       const newSegment: WatchedSegment = {
-        start: currentSegmentStart,
+        start: currentSegmentStartRef.current,
         end: currentTime,
       };
 
       // Create updated segments list
-      const updatedSegments = mergeSegments([...watchedSegments, newSegment]);
+      const updatedSegments = mergeSegments([...watchedSegmentsRef.current, newSegment]);
       setWatchedSegments(updatedSegments);
+      watchedSegmentsRef.current = updatedSegments;
 
       // Update max watched position
-      const newMaxPosition = Math.max(maxWatchedPosition, currentTime);
+      const newMaxPosition = Math.max(maxWatchedPositionRef.current, currentTime);
       setMaxWatchedPosition(newMaxPosition);
+      maxWatchedPositionRef.current = newMaxPosition;
 
       // Report progress periodically (every 5 seconds of playback)
       if (currentTime - lastReportedPosition.current >= 5) {
         lastReportedPosition.current = currentTime;
-        onProgress?.(updatedSegments, currentTime);
+        onProgressRef.current?.(updatedSegments, currentTime);
       }
     }
 
-    onTimeUpdate?.(currentTime);
-  }, [
-    currentSegmentStart,
-    watchedSegments,
-    maxWatchedPosition,
-    onProgress,
-    onTimeUpdate,
-    isReady,
-  ]);
+    onTimeUpdateRef.current?.(currentTime);
+  }, [isReady]);
 
   // Initialize video.js player
   useEffect(() => {
@@ -164,6 +185,7 @@ export function VideoPlayer({
     player.on('play', () => {
       const currentTime = player.currentTime() || 0;
       setCurrentSegmentStart(currentTime);
+      currentSegmentStartRef.current = currentTime;
 
       // Start progress interval
       if (progressIntervalRef.current) {
@@ -172,19 +194,21 @@ export function VideoPlayer({
       progressIntervalRef.current = setInterval(updateProgress, 1000);
     });
 
-    // Handle pause - end current segment
+    // Handle pause - end current segment (uses refs for latest values)
     player.on('pause', () => {
-      if (currentSegmentStart !== null) {
+      if (currentSegmentStartRef.current !== null) {
         const currentTime = player.currentTime() || 0;
         const newSegment: WatchedSegment = {
-          start: currentSegmentStart,
+          start: currentSegmentStartRef.current,
           end: currentTime,
         };
 
-        const updatedSegments = mergeSegments([...watchedSegments, newSegment]);
+        const updatedSegments = mergeSegments([...watchedSegmentsRef.current, newSegment]);
         setWatchedSegments(updatedSegments);
-        onProgress?.(updatedSegments, currentTime);
+        watchedSegmentsRef.current = updatedSegments;
+        onProgressRef.current?.(updatedSegments, currentTime);
         setCurrentSegmentStart(null);
+        currentSegmentStartRef.current = null;
       }
 
       // Clear progress interval
@@ -194,27 +218,34 @@ export function VideoPlayer({
       }
     });
 
-    // Handle seeking
+    // Handle seeking - prevent skipping ahead
     player.on('seeking', () => {
-      handleSeek(player);
+      handleSeek(player, previousTimeRef.current);
     });
 
-    // Handle video end
+    // Track time for seek detection
+    player.on('timeupdate', () => {
+      previousTimeRef.current = player.currentTime() || 0;
+    });
+
+    // Handle video end (uses refs for latest values)
     player.on('ended', () => {
       // Final segment update
-      if (currentSegmentStart !== null) {
+      if (currentSegmentStartRef.current !== null) {
         const finalSegment: WatchedSegment = {
-          start: currentSegmentStart,
+          start: currentSegmentStartRef.current,
           end: duration,
         };
 
-        const finalSegments = mergeSegments([...watchedSegments, finalSegment]);
+        const finalSegments = mergeSegments([...watchedSegmentsRef.current, finalSegment]);
         setWatchedSegments(finalSegments);
-        onProgress?.(finalSegments, duration);
+        watchedSegmentsRef.current = finalSegments;
+        onProgressRef.current?.(finalSegments, duration);
         setCurrentSegmentStart(null);
+        currentSegmentStartRef.current = null;
       }
 
-      onComplete?.();
+      onCompleteRef.current?.();
     });
 
     // Cleanup
@@ -236,7 +267,7 @@ export function VideoPlayer({
 
     // Remove old handlers and add new ones
     player.off('seeking');
-    player.on('seeking', () => handleSeek(player));
+    player.on('seeking', () => handleSeek(player, previousTimeRef.current));
   }, [handleSeek]);
 
   return (
@@ -248,7 +279,7 @@ export function VideoPlayer({
         <SegmentProgress
           segments={watchedSegments}
           duration={duration}
-          currentPosition={playerRef.current?.currentTime() || 0}
+          currentPosition={displayPosition}
         />
       </div>
     </div>

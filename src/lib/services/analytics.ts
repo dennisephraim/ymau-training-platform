@@ -32,9 +32,7 @@ export interface CourseAnalytics {
   certificatesIssued: number;
 }
 
-export interface IterationAnalytics {
-  iterationId: string;
-  iterationName: string;
+export interface CourseDetailedAnalytics {
   courseId: string;
   courseName: string;
   totalStudents: number;
@@ -59,7 +57,6 @@ export interface StudentProgressSummary {
   studentEmail: string;
   courseId: string;
   courseName: string;
-  iterationName: string;
   enrolledAt: Date;
   overallProgress: number;
   completedChapters: number;
@@ -128,30 +125,25 @@ export async function getInstructorCourseAnalytics(
 }
 
 /**
- * Get detailed analytics for a specific iteration
+ * Get detailed analytics for a specific course
  */
-export async function getIterationAnalytics(
-  iterationId: string
-): Promise<IterationAnalytics | null> {
+export async function getCourseAnalytics(
+  courseId: string
+): Promise<CourseDetailedAnalytics | null> {
   if (!db) throw new Error('Firestore not initialized');
 
-  // Get iteration details
-  const { getIteration } = await import('./iterations');
-  const iteration = await getIteration(iterationId);
-  if (!iteration) return null;
-
   // Get course details
-  const course = await courseService.getCourse(iteration.courseId);
+  const course = await courseService.getCourse(courseId);
   if (!course) return null;
 
   // Get chapters
-  const chapters = await courseService.getChapters(iteration.courseId);
+  const chapters = await courseService.getChapters(courseId);
 
-  // Get enrollments for this iteration
+  // Get enrollments for this course
   const enrollmentsRef = collection(db, 'enrollments');
   const enrollmentsQuery = query(
     enrollmentsRef,
-    where('iterationId', '==', iterationId)
+    where('courseId', '==', courseId)
   );
   const enrollmentsSnap = await getDocs(enrollmentsQuery);
 
@@ -172,7 +164,7 @@ export async function getIterationAnalytics(
     if (enrollment.status === 'completed') completedStudents++;
 
     // Get progress for this enrollment
-    const progress = await progressService.getCourseProgress(doc.id, iteration.courseId);
+    const progress = await progressService.getCourseProgress(doc.id, courseId);
     totalProgress += progress.overallPercentage;
 
     // Update chapter stats
@@ -208,9 +200,7 @@ export async function getIterationAnalytics(
   }).sort((a, b) => a.chapterOrder - b.chapterOrder);
 
   return {
-    iterationId,
-    iterationName: iteration.name,
-    courseId: course.id,
+    courseId,
     courseName: course.title,
     totalStudents,
     activeStudents,
@@ -221,28 +211,24 @@ export async function getIterationAnalytics(
 }
 
 /**
- * Get student progress details for an iteration
+ * Get student progress details for a course
  */
-export async function getIterationStudentProgress(
-  iterationId: string
+export async function getCourseStudentProgress(
+  courseId: string
 ): Promise<StudentProgressSummary[]> {
   if (!db) throw new Error('Firestore not initialized');
 
-  // Get iteration and course details
-  const { getIteration } = await import('./iterations');
-  const iteration = await getIteration(iterationId);
-  if (!iteration) return [];
-
-  const course = await courseService.getCourse(iteration.courseId);
+  // Get course details
+  const course = await courseService.getCourse(courseId);
   if (!course) return [];
 
-  const chapters = await courseService.getChapters(iteration.courseId);
+  const chapters = await courseService.getChapters(courseId);
 
   // Get enrollments
   const enrollmentsRef = collection(db, 'enrollments');
   const enrollmentsQuery = query(
     enrollmentsRef,
-    where('iterationId', '==', iterationId),
+    where('courseId', '==', courseId),
     orderBy('enrolledAt', 'desc')
   );
   const enrollmentsSnap = await getDocs(enrollmentsQuery);
@@ -256,7 +242,7 @@ export async function getIterationStudentProgress(
   const certificatesRef = collection(db, 'certificates');
   const certificatesQuery = query(
     certificatesRef,
-    where('iterationId', '==', iterationId)
+    where('courseId', '==', courseId)
   );
   const certificatesSnap = await getDocs(certificatesQuery);
   const certificateEnrollmentIds = new Set(
@@ -270,7 +256,7 @@ export async function getIterationStudentProgress(
     const user = users.get(enrollment.studentId);
 
     // Get progress
-    const progress = await progressService.getCourseProgress(doc.id, iteration.courseId);
+    const progress = await progressService.getCourseProgress(doc.id, courseId);
 
     summaries.push({
       enrollmentId: doc.id,
@@ -279,7 +265,6 @@ export async function getIterationStudentProgress(
       studentEmail: user?.email || '',
       courseId: course.id,
       courseName: course.title,
-      iterationName: iteration.name,
       enrolledAt: toDate(enrollment.enrolledAt),
       overallProgress: progress.overallPercentage,
       completedChapters: progress.completedChapters,

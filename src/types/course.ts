@@ -9,6 +9,12 @@ export interface Course {
   isPublished: boolean;
   chapterCount: number;
   totalDurationSeconds: number;
+  // Enrollment settings (moved from iteration concept)
+  enrollmentOpen: boolean;
+  startDate: Date | null;
+  endDate: Date | null;
+  maxStudents: number | null; // null = unlimited
+  enrolledCount: number;
 }
 
 export interface CourseDocument {
@@ -21,6 +27,12 @@ export interface CourseDocument {
   isPublished: boolean;
   chapterCount: number;
   totalDurationSeconds: number;
+  // Enrollment settings
+  enrollmentOpen: boolean;
+  startDate: Date | null;
+  endDate: Date | null;
+  maxStudents: number | null;
+  enrolledCount: number;
 }
 
 export interface Chapter {

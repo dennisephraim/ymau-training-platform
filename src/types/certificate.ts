@@ -8,12 +8,10 @@ export interface Certificate {
   enrollmentId: string;
   courseId: string;
   studentId: string;
-  iterationId: string;
 
   // Certificate details
   studentName: string;
   courseName: string;
-  iterationName: string;
 
   // Verification
   verificationCode: string; // Unique code for public verification
@@ -37,10 +35,8 @@ export interface CertificateDocument {
   enrollmentId: string;
   courseId: string;
   studentId: string;
-  iterationId: string;
   studentName: string;
   courseName: string;
-  iterationName: string;
   verificationCode: string;
   templateId: string | null;
   pdfUrl: string | null;

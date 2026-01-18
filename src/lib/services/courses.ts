@@ -103,7 +103,7 @@ export async function getCourseWithChapters(courseId: string): Promise<CourseWit
 }
 
 export async function createCourse(
-  data: Omit<CourseDocument, 'createdAt' | 'updatedAt' | 'chapterCount' | 'totalDurationSeconds'>
+  data: Omit<CourseDocument, 'createdAt' | 'updatedAt' | 'chapterCount' | 'totalDurationSeconds' | 'enrolledCount'>
 ): Promise<string> {
   if (!db) throw new Error('Firestore not initialized');
 
@@ -112,6 +112,11 @@ export async function createCourse(
     ...data,
     chapterCount: 0,
     totalDurationSeconds: 0,
+    enrolledCount: 0,
+    enrollmentOpen: data.enrollmentOpen ?? false,
+    startDate: data.startDate ?? null,
+    endDate: data.endDate ?? null,
+    maxStudents: data.maxStudents ?? null,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -272,4 +277,57 @@ async function updateCourseStats(courseId: string): Promise<void> {
     totalDurationSeconds,
     updatedAt: serverTimestamp(),
   });
+}
+
+// ============ COURSE DUPLICATION ============
+
+export async function duplicateCourse(
+  courseId: string,
+  newTitle: string,
+  createdBy: string
+): Promise<string> {
+  if (!db) throw new Error('Firestore not initialized');
+
+  // Get the original course
+  const originalCourse = await getCourse(courseId);
+  if (!originalCourse) throw new Error('Course not found');
+
+  // Get original chapters
+  const originalChapters = await getChapters(courseId);
+
+  // Create the new course (with fresh enrollment data)
+  const newCourseId = await createCourse({
+    title: newTitle,
+    description: originalCourse.description,
+    thumbnailUrl: originalCourse.thumbnailUrl,
+    createdBy,
+    isPublished: false, // Start unpublished
+    enrollmentOpen: false,
+    startDate: null,
+    endDate: null,
+    maxStudents: null,
+  });
+
+  // Duplicate chapters
+  const batch = writeBatch(db);
+  for (const chapter of originalChapters) {
+    const newChapterRef = doc(collection(db, 'courses', newCourseId, 'chapters'));
+    batch.set(newChapterRef, {
+      title: chapter.title,
+      description: chapter.description,
+      order: chapter.order,
+      videoUrl: chapter.videoUrl, // Reference same video
+      videoPath: chapter.videoPath,
+      durationSeconds: chapter.durationSeconds,
+      thumbnailUrl: chapter.thumbnailUrl,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  }
+  await batch.commit();
+
+  // Update new course stats
+  await updateCourseStats(newCourseId);
+
+  return newCourseId;
 }

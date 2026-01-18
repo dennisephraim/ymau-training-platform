@@ -15,6 +15,7 @@
     "@radix-ui/react-toast": "^1.2.15",
     "@react-pdf/renderer": "^4.3.2",
     "@types/video.js": "^7.3.58",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "firebase": "^12.7.0",

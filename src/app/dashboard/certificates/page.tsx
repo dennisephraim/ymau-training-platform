@@ -134,7 +134,9 @@ function CertificateCard({
           </span>
         </div>
         <h3 className="text-lg font-bold mt-4">{certificate.courseName}</h3>
-        <p className="text-sm opacity-75">{certificate.iterationName}</p>
+        <p className="text-sm opacity-75">
+          Issued by {certificate.issuerName}
+        </p>
       </div>
 
       <CardContent className="p-4 space-y-4">

@@ -38,7 +38,6 @@ export function CertificateGenerator({
     const certificateData: CertificateData = {
       studentName: certificate.studentName,
       courseName: certificate.courseName,
-      iterationName: certificate.iterationName,
       issuedDate: formatCertificateDate(certificate.issuedAt),
       verificationCode: certificate.verificationCode,
       qrCodeDataUrl,
@@ -146,7 +145,6 @@ export async function generateCertificateBlob(
   const certificateData: CertificateData = {
     studentName: certificate.studentName,
     courseName: certificate.courseName,
-    iterationName: certificate.iterationName,
     issuedDate: formatCertificateDate(certificate.issuedAt),
     verificationCode: certificate.verificationCode,
     qrCodeDataUrl,

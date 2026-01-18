@@ -2,9 +2,21 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { BookOpen, Clock, Video, Play, CheckCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/Badge';
+import { Progress, CircularProgress } from '@/components/ui/Progress';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { 
+  BookOpen, 
+  Clock, 
+  Video, 
+  Play, 
+  CheckCircle,
+  Compass,
+  Plus,
+  GraduationCap
+} from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthContext';
 import { Enrollment } from '@/types/enrollment';
 import { Course } from '@/types/course';
@@ -54,24 +66,24 @@ export default function MyCoursesPage() {
     fetchEnrollments();
   }, [fetchEnrollments]);
 
+  // Separate completed and in-progress courses
+  const completedCourses = enrollments.filter(e => e.status === 'completed');
+  const inProgressCourses = enrollments.filter(e => e.status !== 'completed');
+
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Courses</h1>
-          <p className="text-gray-600 mt-1">View your enrolled courses and continue learning</p>
+      <div className="space-y-8 animate-fade-in">
+        <div className="space-y-2">
+          <div className="h-8 bg-gray-200 rounded-lg w-48 animate-pulse"></div>
+          <div className="h-4 bg-gray-200 rounded w-72 animate-pulse"></div>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader>
-                <div className="h-6 bg-gray-200 rounded w-3/4"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2 mt-2"></div>
-              </CardHeader>
-              <CardContent>
-                <div className="h-4 bg-gray-200 rounded w-full"></div>
-              </CardContent>
-            </Card>
+            <div key={i} className="bg-white rounded-xl border border-gray-200 p-6 animate-pulse">
+              <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+              <div className="h-2 bg-gray-200 rounded w-full"></div>
+            </div>
           ))}
         </div>
       </div>
@@ -79,43 +91,77 @@ export default function MyCoursesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-fade-in">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">My Courses</h1>
-          <p className="text-gray-600 mt-1">View your enrolled courses and continue learning</p>
+          <p className="text-gray-500 mt-1">
+            {enrollments.length > 0 
+              ? `${enrollments.length} course${enrollments.length !== 1 ? 's' : ''} • ${completedCourses.length} completed`
+              : 'View your enrolled courses and continue learning'
+            }
+          </p>
         </div>
-        {user?.role === 'student' && (
-          <Link href="/dashboard/enroll">
-            <Button variant="outline">Join Course</Button>
-          </Link>
-        )}
+        <Link href="/dashboard/enroll">
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Join Course
+          </Button>
+        </Link>
       </div>
 
       {enrollments.length === 0 ? (
-        <Card>
+        <Card className="border-dashed border-2 border-indigo-200 bg-indigo-50/50">
           <CardContent className="py-12">
-            <div className="text-center">
-              <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-4 text-lg font-medium text-gray-900">No Courses Yet</h3>
-              <p className="mt-2 text-sm text-gray-500">
-                You haven&apos;t enrolled in any courses yet.
-              </p>
-              {user?.role === 'student' && (
-                <div className="mt-6">
-                  <Link href="/dashboard/enroll">
-                    <Button>Join a Course</Button>
-                  </Link>
-                </div>
-              )}
-            </div>
+            <EmptyState
+              icon={<Compass className="h-8 w-8" />}
+              title="No Courses Yet"
+              description="You haven't enrolled in any courses yet. Browse available courses or enter an enrollment code from your instructor."
+              action={
+                <Link href="/dashboard/enroll">
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Explore Courses
+                  </Button>
+                </Link>
+              }
+            />
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {enrollments.map((enrollment) => (
-            <EnrolledCourseCard key={enrollment.id} enrollment={enrollment} />
-          ))}
+        <div className="space-y-8">
+          {/* In Progress Courses */}
+          {inProgressCourses.length > 0 && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <Play className="h-5 w-5 text-indigo-500" />
+                In Progress
+                <Badge variant="info" size="sm">{inProgressCourses.length}</Badge>
+              </h2>
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {inProgressCourses.map((enrollment) => (
+                  <EnrolledCourseCard key={enrollment.id} enrollment={enrollment} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Completed Courses */}
+          {completedCourses.length > 0 && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <GraduationCap className="h-5 w-5 text-emerald-500" />
+                Completed
+                <Badge variant="success" size="sm">{completedCourses.length}</Badge>
+              </h2>
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {completedCourses.map((enrollment) => (
+                  <EnrolledCourseCard key={enrollment.id} enrollment={enrollment} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -135,54 +181,75 @@ function EnrolledCourseCard({ enrollment }: { enrollment: EnrolledCourse }) {
   const totalChapters = progress?.totalChapters || course.chapterCount;
 
   return (
-    <Card className="relative overflow-hidden">
-      {isCompleted && (
-        <div className="absolute top-3 right-3">
-          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-            <CheckCircle className="h-3 w-3 mr-1" />
-            Completed
-          </span>
-        </div>
-      )}
-      <CardHeader>
-        <CardTitle className="text-lg pr-20">{course.title}</CardTitle>
-        <CardDescription className="line-clamp-2">
-          {course.description || 'No description'}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center space-x-4 text-sm text-gray-500">
-          <div className="flex items-center">
-            <Video className="h-4 w-4 mr-1" />
-            {completedChapters}/{totalChapters} chapters
-          </div>
-          <div className="flex items-center">
-            <Clock className="h-4 w-4 mr-1" />
-            {formatDuration(course.totalDurationSeconds)}
-          </div>
-        </div>
-
-        {/* Progress bar */}
-        <div className="space-y-1">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-500">Progress</span>
-            <span className="font-medium">{progressPercentage.toFixed(0)}%</span>
-          </div>
-          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-blue-600 transition-all duration-300"
-              style={{ width: `${progressPercentage}%` }}
+    <Link 
+      href={`/dashboard/courses/${enrollment.id}`}
+      className="group block"
+    >
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-100/50 transition-all duration-300">
+        {/* Course Header with gradient */}
+        <div className={`h-2 ${isCompleted ? 'bg-gradient-to-r from-emerald-400 to-teal-500' : 'bg-gradient-to-r from-indigo-400 to-purple-500'}`} />
+        
+        <div className="p-5">
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                {isCompleted ? (
+                  <Badge variant="success" size="sm">
+                    <CheckCircle className="h-3 w-3" />
+                    Completed
+                  </Badge>
+                ) : (
+                  <Badge variant="info" size="sm">In Progress</Badge>
+                )}
+              </div>
+              <h3 className="font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors truncate">
+                {course.title}
+              </h3>
+              <p className="text-sm text-gray-500 line-clamp-2 mt-1">
+                {course.description || 'No description'}
+              </p>
+            </div>
+            <CircularProgress 
+              value={progressPercentage} 
+              size="md"
+              strokeWidth={4}
+              className="shrink-0 ml-3"
             />
           </div>
-        </div>
 
-        <Link href={`/dashboard/courses/${enrollment.id}`}>
-          <Button className="w-full">
-            <Play className="h-4 w-4 mr-2" />
-            {isCompleted ? 'Review Course' : 'Continue Learning'}
-          </Button>
-        </Link>
-      </CardContent>
-    </Card>
+          {/* Stats */}
+          <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
+            <div className="flex items-center gap-1.5">
+              <Video className="h-4 w-4" />
+              <span>{completedChapters}/{totalChapters} chapters</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Clock className="h-4 w-4" />
+              <span>{formatDuration(course.totalDurationSeconds)}</span>
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-gray-500">Progress</span>
+              <span className="font-medium text-gray-700">{progressPercentage.toFixed(0)}%</span>
+            </div>
+            <Progress value={progressPercentage} size="md" />
+          </div>
+
+          {/* Action */}
+          <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+            <span className="text-sm text-gray-500">
+              {isCompleted ? 'View certificate' : 'Continue where you left off'}
+            </span>
+            <span className="text-sm font-medium text-indigo-600 group-hover:text-indigo-700 flex items-center gap-1">
+              <Play className="h-3 w-3" />
+              {isCompleted ? 'Review' : 'Continue'}
+            </span>
+          </div>
+        </div>
+      </div>
+    </Link>
   );
 }

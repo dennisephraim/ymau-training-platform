@@ -5,6 +5,9 @@ import Link from 'next/link';
 import { useAuth } from '@/components/auth/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import { Progress, CircularProgress } from '@/components/ui/Progress';
+import { EmptyState } from '@/components/ui/EmptyState';
 import {
   BookOpen,
   GraduationCap,
@@ -16,6 +19,10 @@ import {
   BarChart3,
   CheckCircle,
   ArrowRight,
+  Compass,
+  Sparkles,
+  TrendingUp,
+  Target,
 } from 'lucide-react';
 import { Enrollment } from '@/types/enrollment';
 import { Course } from '@/types/course';
@@ -104,242 +111,201 @@ export default function DashboardPage() {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  const roleMessages = {
-    student: 'Start learning and track your progress through YMAU training courses.',
-    instructor: 'Manage courses, view student progress, and analyze completion rates.',
-    admin: 'Full access to manage users, courses, and system settings.',
-  };
-
-  const statCards = [
-    {
-      title: 'Enrolled Courses',
-      value: stats.enrolledCourses.toString(),
-      description: 'Active course enrollments',
-      icon: BookOpen,
-      color: 'bg-blue-500',
-    },
-    {
-      title: 'In Progress',
-      value: stats.inProgress.toString(),
-      description: 'Courses currently watching',
-      icon: Clock,
-      color: 'bg-yellow-500',
-    },
-    {
-      title: 'Completed',
-      value: stats.completed.toString(),
-      description: 'Courses finished',
-      icon: GraduationCap,
-      color: 'bg-green-500',
-    },
-    {
-      title: 'Certificates',
-      value: stats.certificates.toString(),
-      description: 'Earned certificates',
-      icon: Award,
-      color: 'bg-purple-500',
-    },
-  ];
-
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div>
-          <div className="h-8 bg-gray-200 rounded w-64 animate-pulse"></div>
-          <div className="h-4 bg-gray-200 rounded w-96 mt-2 animate-pulse"></div>
+      <div className="space-y-8 animate-fade-in">
+        <div className="space-y-2">
+          <div className="h-8 bg-gray-200 rounded-lg w-72 animate-pulse"></div>
+          <div className="h-4 bg-gray-200 rounded w-96 animate-pulse"></div>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="py-6">
-                <div className="h-16 bg-gray-200 rounded"></div>
-              </CardContent>
-            </Card>
+            <div key={i} className="bg-white rounded-xl border border-gray-200 p-6 animate-pulse">
+              <div className="h-20 bg-gray-200 rounded"></div>
+            </div>
           ))}
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          Welcome back, {user?.displayName?.split(' ')[0] || 'User'}!
-        </h1>
-        <p className="text-gray-600 mt-1">
-          {user && roleMessages[user.role]}
-        </p>
-      </div>
+  const firstName = user?.displayName?.split(' ')[0] || 'there';
+  const greeting = getGreeting();
 
-      {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {statCards.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={stat.title}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">
-                  {stat.title}
-                </CardTitle>
-                <div className={`rounded-lg p-2 ${stat.color}`}>
-                  <Icon className="h-4 w-4 text-white" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <p className="text-xs text-gray-500 mt-1">{stat.description}</p>
-              </CardContent>
-            </Card>
-          );
-        })}
+  return (
+    <div className="space-y-8 animate-fade-in">
+      {/* Welcome Header */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-2xl p-8 text-white">
+        <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,rgba(255,255,255,0.1),rgba(255,255,255,0.5))]"></div>
+        <div className="relative">
+          <div className="flex items-center gap-2 text-white/80 text-sm mb-2">
+            <Sparkles className="h-4 w-4" />
+            {greeting}
+          </div>
+          <h1 className="text-3xl font-bold">Welcome back, {firstName}!</h1>
+          <p className="mt-2 text-white/80 max-w-xl">
+            {user?.role === 'student' 
+              ? "Continue your learning journey. Every video watched brings you closer to your goals."
+              : user?.role === 'instructor'
+              ? "Manage your courses and track student progress from your dashboard."
+              : "Full access to manage users, courses, and system settings."}
+          </p>
+        </div>
+        
+        {/* Quick stats in header */}
+        {user?.role === 'student' && stats.enrolledCourses > 0 && (
+          <div className="relative mt-6 flex items-center gap-6">
+            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2">
+              <Target className="h-5 w-5" />
+              <div>
+                <p className="text-xs text-white/70">Courses</p>
+                <p className="font-semibold">{stats.enrolledCourses}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2">
+              <TrendingUp className="h-5 w-5" />
+              <div>
+                <p className="text-xs text-white/70">Completed</p>
+                <p className="font-semibold">{stats.completed}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2">
+              <Award className="h-5 w-5" />
+              <div>
+                <p className="text-xs text-white/70">Certificates</p>
+                <p className="font-semibold">{stats.certificates}</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Student Content */}
       {user?.role === 'student' && (
         <>
-          {/* Recent Courses */}
-          {recentCourses.length > 0 && (
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Continue Learning</CardTitle>
-                    <CardDescription>Pick up where you left off</CardDescription>
-                  </div>
-                  <Link href="/dashboard/courses">
-                    <Button variant="outline" size="sm">
-                      View All
-                      <ArrowRight className="h-4 w-4 ml-1" />
-                    </Button>
-                  </Link>
+          {/* Continue Learning Section */}
+          {recentCourses.length > 0 ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Continue Learning</h2>
+                  <p className="text-sm text-gray-500">Pick up where you left off</p>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {recentCourses.map(({ enrollment, course, progress }) => (
-                    <div
-                      key={enrollment.id}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2">
-                          <h3 className="font-medium text-gray-900">
+                <Link href="/dashboard/courses">
+                  <Button variant="ghost" size="sm">
+                    View All
+                    <ArrowRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </Link>
+              </div>
+              
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {recentCourses.map(({ enrollment, course, progress }) => (
+                  <Link 
+                    key={enrollment.id} 
+                    href={`/dashboard/courses/${enrollment.id}`}
+                    className="group"
+                  >
+                    <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-100/50 transition-all duration-300">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            {enrollment.status === 'completed' ? (
+                              <Badge variant="success" size="sm">
+                                <CheckCircle className="h-3 w-3" />
+                                Completed
+                              </Badge>
+                            ) : (
+                              <Badge variant="info" size="sm">In Progress</Badge>
+                            )}
+                          </div>
+                          <h3 className="font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors truncate">
                             {course.title}
                           </h3>
-                          {enrollment.status === 'completed' && (
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                          )}
+                          <p className="text-sm text-gray-500 mt-1">
+                            {course.chapterCount} chapters • {formatDuration(course.totalDurationSeconds)}
+                          </p>
                         </div>
-                        <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
-                          <span>{course.chapterCount} chapters</span>
-                          <span>|</span>
-                          <span>{formatDuration(course.totalDurationSeconds)}</span>
-                        </div>
-                        <div className="mt-2">
-                          <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-                            <span>Progress</span>
-                            <span>{progress.toFixed(0)}%</span>
-                          </div>
-                          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-blue-600"
-                              style={{ width: `${progress}%` }}
-                            />
-                          </div>
-                        </div>
+                        <CircularProgress 
+                          value={progress} 
+                          size="md"
+                          strokeWidth={4}
+                          className="shrink-0"
+                        />
                       </div>
-                      <Link href={`/dashboard/courses/${enrollment.id}`}>
-                        <Button size="sm" className="ml-4">
-                          <Play className="h-4 w-4 mr-1" />
+                      
+                      <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                        <span className="text-sm text-gray-500">
+                          {Math.round(progress)}% complete
+                        </span>
+                        <span className="text-sm font-medium text-indigo-600 group-hover:text-indigo-700 flex items-center gap-1">
+                          <Play className="h-3 w-3" />
                           {enrollment.status === 'completed' ? 'Review' : 'Continue'}
-                        </Button>
-                      </Link>
+                        </span>
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ) : (
+            /* Getting Started for new students */
+            <Card className="border-dashed border-2 border-indigo-200 bg-indigo-50/50">
+              <CardContent className="py-12">
+                <EmptyState
+                  icon={<Compass className="h-8 w-8" />}
+                  title="Start Your Learning Journey"
+                  description="You're not enrolled in any courses yet. Browse available courses or enter an enrollment code from your instructor."
+                  action={
+                    <Link href="/dashboard/enroll">
+                      <Button>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Explore Courses
+                      </Button>
+                    </Link>
+                  }
+                />
               </CardContent>
             </Card>
           )}
 
-          {/* Getting Started (only show if no enrollments) */}
-          {stats.enrolledCourses === 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Getting Started</CardTitle>
-                <CardDescription>
-                  Complete these steps to begin your YMAU training journey
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-green-600">
-                      <CheckCircle className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="font-medium">Account Created</p>
-                      <p className="text-sm text-gray-500">Your account is ready to go</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600">
-                      2
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium">Enroll in a Course</p>
-                      <p className="text-sm text-gray-500">Use an enrollment code or browse available courses</p>
-                    </div>
-                    <Link href="/dashboard/enroll">
-                      <Button size="sm">Join Course</Button>
-                    </Link>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-600">
-                      3
-                    </div>
-                    <div>
-                      <p className="font-medium">Complete Training</p>
-                      <p className="text-sm text-gray-500">Watch all videos to earn your certificate</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+
         </>
       )}
 
       {/* Instructor Content */}
       {(user?.role === 'instructor' || user?.role === 'admin') && (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-indigo-500" />
+                Quick Actions
+              </CardTitle>
               <CardDescription>Common instructor tasks</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <Link href="/instructor/courses/new" className="block">
-                <Button variant="outline" className="w-full justify-start">
+                <Button className="w-full justify-start" variant="outline">
                   <Plus className="h-4 w-4 mr-2" />
                   Create New Course
                 </Button>
               </Link>
               <Link href="/instructor/courses" className="block">
-                <Button variant="outline" className="w-full justify-start">
+                <Button className="w-full justify-start" variant="outline">
                   <BookOpen className="h-4 w-4 mr-2" />
                   Manage Courses
                 </Button>
               </Link>
               <Link href="/instructor/analytics" className="block">
-                <Button variant="outline" className="w-full justify-start">
+                <Button className="w-full justify-start" variant="outline">
                   <BarChart3 className="h-4 w-4 mr-2" />
                   View Analytics
                 </Button>
               </Link>
               {user?.role === 'admin' && (
                 <Link href="/admin/users" className="block">
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button className="w-full justify-start" variant="outline">
                     <Users className="h-4 w-4 mr-2" />
                     Manage Users
                   </Button>
@@ -350,45 +316,41 @@ export default function DashboardPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Platform Overview</CardTitle>
-              <CardDescription>Quick stats for your courses</CardDescription>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-emerald-500" />
+                Platform Overview
+              </CardTitle>
+              <CardDescription>Quick navigation to key areas</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">Your Courses</span>
-                  <Link
-                    href="/instructor/courses"
-                    className="text-sm font-medium text-blue-600 hover:underline"
-                  >
-                    View All
-                  </Link>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">Analytics</span>
-                  <Link
-                    href="/instructor/analytics"
-                    className="text-sm font-medium text-blue-600 hover:underline"
-                  >
-                    View Dashboard
-                  </Link>
-                </div>
-                {user?.role === 'admin' && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-500">User Management</span>
-                    <Link
-                      href="/admin/users"
-                      className="text-sm font-medium text-blue-600 hover:underline"
-                    >
-                      Manage Users
-                    </Link>
-                  </div>
-                )}
-              </div>
+            <CardContent className="space-y-4">
+              <QuickLink href="/instructor/courses" label="Your Courses" />
+              <QuickLink href="/instructor/analytics" label="Analytics Dashboard" />
+              {user?.role === 'admin' && (
+                <QuickLink href="/admin/users" label="User Management" />
+              )}
             </CardContent>
           </Card>
         </div>
       )}
     </div>
   );
+}
+
+function QuickLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link 
+      href={href}
+      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+    >
+      <span className="text-sm text-gray-700">{label}</span>
+      <ArrowRight className="h-4 w-4 text-gray-400" />
+    </Link>
+  );
+}
+
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
 }

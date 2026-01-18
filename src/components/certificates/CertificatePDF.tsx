@@ -17,7 +17,7 @@ import {
 interface CertificateData {
   studentName: string;
   courseName: string;
-  iterationName: string;
+
   issuedDate: string;
   verificationCode: string;
   qrCodeDataUrl: string;
@@ -100,12 +100,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#1e3a5f',
     fontFamily: 'Helvetica-Bold',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  iterationName: {
-    fontSize: 12,
-    color: '#666666',
     marginBottom: 30,
     textAlign: 'center',
   },
@@ -228,7 +222,6 @@ export function CertificatePDF({ data }: { data: CertificateData }) {
               has successfully completed all requirements for
             </Text>
             <Text style={styles.courseName}>{data.courseName}</Text>
-            <Text style={styles.iterationName}>{data.iterationName}</Text>
           </View>
 
           {/* Footer */}

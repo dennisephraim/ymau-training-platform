@@ -1,34 +1,8 @@
-export interface CourseIteration {
-  id: string;
-  courseId: string;
-  name: string; // e.g., "Fall 2026", "Spring 2027"
-  startDate: Date | null;
-  endDate: Date | null;
-  isActive: boolean;
-  enrollmentOpen: boolean;
-  createdBy: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface CourseIterationDocument {
-  courseId: string;
-  name: string;
-  startDate: Date | null;
-  endDate: Date | null;
-  isActive: boolean;
-  enrollmentOpen: boolean;
-  createdBy: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 export type EnrollmentStatus = 'active' | 'completed' | 'withdrawn';
 export type EnrollmentMethod = 'code' | 'request' | 'direct';
 
 export interface Enrollment {
   id: string;
-  iterationId: string;
   courseId: string;
   studentId: string;
   enrolledAt: Date;
@@ -40,7 +14,6 @@ export interface Enrollment {
 }
 
 export interface EnrollmentDocument {
-  iterationId: string;
   courseId: string;
   studentId: string;
   enrolledAt: Date;
@@ -54,7 +27,6 @@ export interface EnrollmentDocument {
 export interface EnrollmentCode {
   id: string;
   code: string;
-  iterationId: string;
   courseId: string;
   createdBy: string;
   createdAt: Date;
@@ -66,7 +38,6 @@ export interface EnrollmentCode {
 
 export interface EnrollmentCodeDocument {
   code: string;
-  iterationId: string;
   courseId: string;
   createdBy: string;
   createdAt: Date;
@@ -80,7 +51,6 @@ export type EnrollmentRequestStatus = 'pending' | 'approved' | 'rejected';
 
 export interface EnrollmentRequest {
   id: string;
-  iterationId: string;
   courseId: string;
   studentId: string;
   requestedAt: Date;
@@ -91,7 +61,6 @@ export interface EnrollmentRequest {
 }
 
 export interface EnrollmentRequestDocument {
-  iterationId: string;
   courseId: string;
   studentId: string;
   requestedAt: Date;

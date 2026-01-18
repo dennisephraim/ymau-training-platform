@@ -8,7 +8,6 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { Course, CourseDocument } from '@/types/course';
-import { CourseIteration, CourseIterationDocument } from '@/types/enrollment';
 
 // Helper to convert Firestore timestamps to Date
 function toDate(timestamp: Timestamp | Date | null): Date | null {
@@ -17,17 +16,45 @@ function toDate(timestamp: Timestamp | Date | null): Date | null {
   return timestamp.toDate();
 }
 
-export interface BrowsableCourse extends Course {
-  iterations: CourseIteration[];
-}
+export type BrowsableCourse = Course;
 
 /**
- * Get all published courses with their open iterations
+ * Get all published courses with open enrollment
  */
 export async function getPublishedCourses(): Promise<BrowsableCourse[]> {
   if (!db) throw new Error('Firestore not initialized');
 
-  // Get published courses
+  // Get published courses with enrollment open
+  const coursesRef = collection(db, 'courses');
+  const coursesQuery = query(
+    coursesRef,
+    where('isPublished', '==', true),
+    where('enrollmentOpen', '==', true),
+    orderBy('createdAt', 'desc')
+  );
+  const coursesSnapshot = await getDocs(coursesQuery);
+
+  const courses: BrowsableCourse[] = coursesSnapshot.docs.map((courseDoc) => {
+    const courseData = courseDoc.data() as CourseDocument;
+    return {
+      id: courseDoc.id,
+      ...courseData,
+      createdAt: toDate(courseData.createdAt as any) || new Date(),
+      updatedAt: toDate(courseData.updatedAt as any) || new Date(),
+      startDate: toDate(courseData.startDate as any),
+      endDate: toDate(courseData.endDate as any),
+    };
+  });
+
+  return courses;
+}
+
+/**
+ * Get all published courses (regardless of enrollment status)
+ */
+export async function getAllPublishedCourses(): Promise<BrowsableCourse[]> {
+  if (!db) throw new Error('Firestore not initialized');
+
   const coursesRef = collection(db, 'courses');
   const coursesQuery = query(
     coursesRef,
@@ -36,44 +63,17 @@ export async function getPublishedCourses(): Promise<BrowsableCourse[]> {
   );
   const coursesSnapshot = await getDocs(coursesQuery);
 
-  const courses: BrowsableCourse[] = [];
-
-  for (const courseDoc of coursesSnapshot.docs) {
+  const courses: BrowsableCourse[] = coursesSnapshot.docs.map((courseDoc) => {
     const courseData = courseDoc.data() as CourseDocument;
-
-    // Get active iterations with open enrollment for this course
-    const iterationsRef = collection(db, 'courseIterations');
-    const iterationsQuery = query(
-      iterationsRef,
-      where('courseId', '==', courseDoc.id),
-      where('isActive', '==', true),
-      where('enrollmentOpen', '==', true)
-    );
-    const iterationsSnapshot = await getDocs(iterationsQuery);
-
-    const iterations: CourseIteration[] = iterationsSnapshot.docs.map((iterDoc) => {
-      const iterData = iterDoc.data() as CourseIterationDocument;
-      return {
-        id: iterDoc.id,
-        ...iterData,
-        startDate: toDate(iterData.startDate as any),
-        endDate: toDate(iterData.endDate as any),
-        createdAt: toDate(iterData.createdAt as any) || new Date(),
-        updatedAt: toDate(iterData.updatedAt as any) || new Date(),
-      };
-    });
-
-    // Only include courses that have at least one open iteration
-    if (iterations.length > 0) {
-      courses.push({
-        id: courseDoc.id,
-        ...courseData,
-        createdAt: toDate(courseData.createdAt as any) || new Date(),
-        updatedAt: toDate(courseData.updatedAt as any) || new Date(),
-        iterations,
-      });
-    }
-  }
+    return {
+      id: courseDoc.id,
+      ...courseData,
+      createdAt: toDate(courseData.createdAt as any) || new Date(),
+      updatedAt: toDate(courseData.updatedAt as any) || new Date(),
+      startDate: toDate(courseData.startDate as any),
+      endDate: toDate(courseData.endDate as any),
+    };
+  });
 
   return courses;
 }

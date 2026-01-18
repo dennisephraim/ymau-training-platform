@@ -25,7 +25,6 @@ import * as enrollmentService from '@/lib/services/enrollments';
 import * as courseService from '@/lib/services/courses';
 import * as progressService from '@/lib/services/progress';
 import * as certificateService from '@/lib/services/certificates';
-import * as iterationService from '@/lib/services/iterations';
 import { formatDuration } from '@/lib/utils/formatters';
 
 export default function CourseViewerPage({
@@ -138,19 +137,13 @@ export default function CourseViewerPage({
     try {
       setIsGeneratingCertificate(true);
 
-      // Get iteration info for certificate
-      const iteration = await iterationService.getIteration(enrollment.iterationId);
-      const iterationName = iteration?.name || 'Course Iteration';
-
       // Create certificate
       const newCert = await certificateService.createCertificate(
         enrollment.id,
         enrollment.courseId,
         user.id,
-        enrollment.iterationId,
         user.displayName || user.email || 'Student',
         course.title,
-        iterationName,
         'system', // Auto-issued
         'YMAU Training Platform'
       );
