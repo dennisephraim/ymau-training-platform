@@ -30,7 +30,7 @@ export function Header({ title, subtitle, actions }: HeaderProps) {
   }, []);
 
   const roleConfig = {
-    student: { label: 'Student', variant: 'info' as const },
+    student: { label: 'Student', variant: 'primary' as const },
     instructor: { label: 'Instructor', variant: 'purple' as const },
     admin: { label: 'Admin', variant: 'warning' as const },
   };
@@ -84,7 +84,7 @@ export function Header({ title, subtitle, actions }: HeaderProps) {
           {isDropdownOpen && (
             <div className="absolute right-0 mt-2 w-64 rounded-xl border border-gray-200 bg-white shadow-lg z-50 overflow-hidden animate-slide-up">
               {/* User info */}
-              <div className="px-4 py-4 bg-gradient-to-br from-indigo-50 to-purple-50 border-b border-gray-100">
+              <div className="px-4 py-4 bg-gradient-to-br from-ymau-light-indigo/30 to-ymau-orange/10 border-b border-gray-100">
                 <div className="flex items-center gap-3">
                   <Avatar
                     src={user?.photoURL}

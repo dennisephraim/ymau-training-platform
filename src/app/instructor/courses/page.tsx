@@ -144,19 +144,19 @@ function CourseCard({ course, onUpdate }: { course: Course; onUpdate: () => void
   };
 
   return (
-    <div className={`group relative bg-white rounded-xl border border-gray-200 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-100/50 transition-all duration-300 ${duplicating ? 'opacity-50' : ''}`}>
+    <div className={`group relative bg-white rounded-xl border border-gray-200 hover:border-ymau-dark-red/30 hover:shadow-lg hover:shadow-ymau-dark-red/10 transition-all duration-300 ${duplicating ? 'opacity-50' : ''}`}>
       {/* Course Content */}
       <div className="p-5">
         <div className="flex items-start gap-4">
           {/* Course Icon/Thumbnail */}
-          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 flex-shrink-0">
+          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-ymau-dark-red to-ymau-orange flex items-center justify-center text-white shadow-lg shadow-ymau-dark-red/20 flex-shrink-0">
             <PlayCircle className="h-7 w-7" />
           </div>
           
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-900 truncate group-hover:text-indigo-600 transition-colors">
+                <h3 className="font-semibold text-gray-900 truncate group-hover:text-ymau-dark-red transition-colors">
                   {course.title}
                 </h3>
                 <p className="text-sm text-gray-500 line-clamp-1 mt-0.5">
@@ -241,7 +241,7 @@ function CourseCard({ course, onUpdate }: { course: Course; onUpdate: () => void
           
           <Link
             href={`/instructor/courses/${course.id}/students`}
-            className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1 group/link"
+            className="text-sm text-ymau-dark-red hover:text-ymau-dark-red/80 font-medium flex items-center gap-1 group/link"
           >
             <Users className="h-4 w-4" />
             <span>{course.enrolledCount || 0} students</span>

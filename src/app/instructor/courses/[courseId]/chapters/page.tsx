@@ -444,12 +444,12 @@ function ChapterForm({
                   </div>
                 </div>
               ) : (
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-indigo-400 transition-colors">
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-ymau-dark-red/50 transition-colors">
                   <Video className="mx-auto h-10 w-10 text-gray-400" />
                   <div className="mt-2">
                     <label
                       htmlFor="video-upload-new"
-                      className="cursor-pointer text-indigo-600 hover:text-indigo-700 font-medium"
+                      className="cursor-pointer text-ymau-dark-red hover:text-ymau-dark-red/80 font-medium"
                     >
                       Select a video file
                       <input

@@ -183,7 +183,7 @@ export default function StudentsPage({
                 <p className="text-sm text-gray-500">Total Students</p>
                 <p className="text-2xl font-bold text-gray-900">{enrollments.length}</p>
               </div>
-              <Users className="h-8 w-8 text-indigo-500" />
+              <Users className="h-8 w-8 text-ymau-dark-red" />
             </div>
           </CardContent>
         </Card>
@@ -420,7 +420,7 @@ export default function StudentsPage({
                       }`}
                     >
                       <div className="flex items-center space-x-4">
-                        <div className="font-mono text-lg font-bold tracking-wider text-indigo-600">
+                        <div className="font-mono text-lg font-bold tracking-wider text-ymau-dark-red">
                           {code.code}
                         </div>
                         <Button

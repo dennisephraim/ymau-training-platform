@@ -19,11 +19,11 @@ const sizeClasses = {
 };
 
 const variantClasses = {
-  default: 'bg-indigo-600',
+  default: 'bg-ymau-dark-red',
   success: 'bg-emerald-500',
   warning: 'bg-amber-500',
   error: 'bg-red-500',
-  gradient: 'bg-gradient-to-r from-indigo-500 to-purple-500',
+  gradient: 'bg-gradient-to-r from-ymau-dark-red to-ymau-orange',
 };
 
 export function Progress({

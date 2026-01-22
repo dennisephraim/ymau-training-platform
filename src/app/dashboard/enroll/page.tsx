@@ -99,11 +99,11 @@ export default function ExplorePage() {
       </div>
 
       {/* Quick Enroll Card */}
-      <Card className="border-indigo-200 bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      <Card className="border-ymau-dark-red/30 bg-gradient-to-br from-ymau-light-indigo/20 via-white to-ymau-orange/10">
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row md:items-center gap-6">
             <div className="flex-shrink-0">
-              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-ymau-dark-red to-ymau-orange flex items-center justify-center shadow-lg shadow-ymau-dark-red/20">
                 <Key className="h-7 w-7 text-white" />
               </div>
             </div>
@@ -231,11 +231,11 @@ function CourseCard({
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-100/50 transition-all duration-300 overflow-hidden">
+    <div className="bg-white rounded-xl border border-gray-200 hover:border-ymau-dark-red/30 hover:shadow-lg hover:shadow-ymau-dark-red/10 transition-all duration-300 overflow-hidden">
       {/* Course Header */}
       <div className="p-6">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white flex-shrink-0">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-ymau-dark-red to-ymau-orange flex items-center justify-center text-white flex-shrink-0">
             <BookOpen className="h-6 w-6" />
           </div>
           <div className="flex-1 min-w-0">

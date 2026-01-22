@@ -17,6 +17,7 @@ interface AuthContextType {
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  refreshUser: () => Promise<void>;
   isConfigured: boolean;
 }
 
@@ -120,8 +121,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const refreshUser = async () => {
+    if (!firebaseUser || !db) return;
+    
+    try {
+      const userDoc = await getOrCreateUser(firebaseUser);
+      setUser(userDoc);
+    } catch (error) {
+      console.error('Error refreshing user:', error);
+      throw error;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, firebaseUser, loading, signInWithGoogle, signOut, isConfigured }}>
+    <AuthContext.Provider value={{ user, firebaseUser, loading, signInWithGoogle, signOut, refreshUser, isConfigured }}>
       {children}
     </AuthContext.Provider>
   );

@@ -112,7 +112,7 @@ export default function MyCoursesPage() {
       </div>
 
       {enrollments.length === 0 ? (
-        <Card className="border-dashed border-2 border-indigo-200 bg-indigo-50/50">
+        <Card className="border-dashed border-2 border-ymau-dark-red/30 bg-ymau-dark-red/5">
           <CardContent className="py-12">
             <EmptyState
               icon={<Compass className="h-8 w-8" />}
@@ -135,7 +135,7 @@ export default function MyCoursesPage() {
           {inProgressCourses.length > 0 && (
             <div className="space-y-4">
               <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <Play className="h-5 w-5 text-indigo-500" />
+                <Play className="h-5 w-5 text-ymau-dark-red" />
                 In Progress
                 <Badge variant="info" size="sm">{inProgressCourses.length}</Badge>
               </h2>
@@ -185,9 +185,9 @@ function EnrolledCourseCard({ enrollment }: { enrollment: EnrolledCourse }) {
       href={`/dashboard/courses/${enrollment.id}`}
       className="group block"
     >
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-100/50 transition-all duration-300">
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-ymau-dark-red/30 hover:shadow-lg hover:shadow-ymau-dark-red/10 transition-all duration-300">
         {/* Course Header with gradient */}
-        <div className={`h-2 ${isCompleted ? 'bg-gradient-to-r from-emerald-400 to-teal-500' : 'bg-gradient-to-r from-indigo-400 to-purple-500'}`} />
+        <div className={`h-2 ${isCompleted ? 'bg-gradient-to-r from-emerald-400 to-teal-500' : 'bg-gradient-to-r from-ymau-dark-red to-ymau-orange'}`} />
         
         <div className="p-5">
           <div className="flex items-start justify-between mb-3">
@@ -202,7 +202,7 @@ function EnrolledCourseCard({ enrollment }: { enrollment: EnrolledCourse }) {
                   <Badge variant="info" size="sm">In Progress</Badge>
                 )}
               </div>
-              <h3 className="font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors truncate">
+              <h3 className="font-semibold text-gray-900 group-hover:text-ymau-dark-red transition-colors truncate">
                 {course.title}
               </h3>
               <p className="text-sm text-gray-500 line-clamp-2 mt-1">
@@ -243,7 +243,7 @@ function EnrolledCourseCard({ enrollment }: { enrollment: EnrolledCourse }) {
             <span className="text-sm text-gray-500">
               {isCompleted ? 'View certificate' : 'Continue where you left off'}
             </span>
-            <span className="text-sm font-medium text-indigo-600 group-hover:text-indigo-700 flex items-center gap-1">
+            <span className="text-sm font-medium text-ymau-dark-red group-hover:text-ymau-dark-red/80 flex items-center gap-1">
               <Play className="h-3 w-3" />
               {isCompleted ? 'Review' : 'Continue'}
             </span>

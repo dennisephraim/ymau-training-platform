@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useAuth } from '@/components/auth/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
-import { GraduationCap, AlertCircle, Sparkles } from 'lucide-react';
+import { AlertCircle, Sparkles } from 'lucide-react';
 
 export default function LoginPage() {
   const { user, loading, signInWithGoogle, isConfigured } = useAuth();
@@ -34,8 +35,9 @@ export default function LoginPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+      <div className="flex min-h-screen items-center justify-center" style={{ backgroundImage: 'url(/YMAU%20Logos%20%28Banner%29.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+        <div className="absolute inset-0 bg-black/40"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white relative z-10" />
       </div>
     );
   }
@@ -45,21 +47,28 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 px-4">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 bg-grid-indigo-100/50 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
+    <div className="flex min-h-screen items-center justify-center px-4 relative" style={{ backgroundImage: 'url(/YMAU%20Logos%20%28Banner%29.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      {/* Dark overlay for readability */}
+      <div className="absolute inset-0 bg-black/40" />
       
-      <div className="relative w-full max-w-md">
+      <div className="relative w-full max-w-md z-10">
         {/* Logo & Title */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white mb-6 shadow-xl shadow-indigo-500/25">
-            <GraduationCap className="h-10 w-10" />
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white/90 backdrop-blur mb-6 shadow-xl p-2">
+            <Image
+              src="/YMAU Crest.png"
+              alt="YMAU Crest"
+              width={64}
+              height={64}
+              className="object-contain"
+              unoptimized
+            />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">YMAU Training</h1>
-          <p className="text-gray-500 mt-2">Yale Model African Union Training Platform</p>
+          <h1 className="text-3xl font-bold text-white">YMAU Training</h1>
+          <p className="text-white/80 mt-2">Yale Model African Union Training Platform</p>
         </div>
 
-        <Card className="border-0 shadow-2xl shadow-indigo-100/50 bg-white/80 backdrop-blur">
+        <Card className="border-0 shadow-2xl shadow-ymau-dark-red/10 bg-white/80 backdrop-blur">
           <CardContent className="p-8 space-y-6">
             {!isConfigured ? (
               <div className="rounded-xl bg-amber-50 border border-amber-200 p-5">
@@ -82,7 +91,7 @@ export default function LoginPage() {
             ) : (
               <>
                 <div className="text-center">
-                  <div className="inline-flex items-center gap-1.5 text-sm text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full mb-4">
+                  <div className="inline-flex items-center gap-1.5 text-sm text-ymau-dark-red bg-ymau-dark-red/10 px-3 py-1.5 rounded-full mb-4">
                     <Sparkles className="h-3.5 w-3.5" />
                     Welcome back
                   </div>
@@ -134,7 +143,7 @@ export default function LoginPage() {
         </Card>
 
         {/* Footer */}
-        <p className="text-center text-sm text-gray-400 mt-8">
+        <p className="text-center text-sm text-white/90 mt-8">
           &copy; {new Date().getFullYear()} Yale Model African Union
         </p>
       </div>

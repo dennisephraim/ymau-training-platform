@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   BookOpen,
@@ -116,12 +117,16 @@ export function Sidebar() {
       {/* Logo */}
       <div className="flex h-16 items-center px-5 border-b border-gray-100">
         <Link href="/dashboard" className="flex items-center gap-3 group">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-lg shadow-md shadow-indigo-500/20 group-hover:shadow-lg group-hover:shadow-indigo-500/30 transition-shadow">
-            Y
-          </div>
+          <Image
+            src="/YMAU Crest.svg"
+            alt="YMAU Crest"
+            width={40}
+            height={40}
+            className=""
+          />
           <div>
             <span className="text-base font-semibold text-gray-900">YMAU</span>
-            <span className="block text-[10px] text-gray-500 -mt-0.5 tracking-wide">Training Platform</span>
+            <span className="block text-[10px] text-gray-500 -mt-0.5 tracking-wide">Delegate Hub</span>
           </div>
         </Link>
       </div>
@@ -149,21 +154,21 @@ export function Sidebar() {
                     className={cn(
                       'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
                       isActive
-                        ? 'bg-indigo-50 text-indigo-700'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        ? 'bg-ymau-dark-red/10 text-ymau-dark-red'
+                        : 'text-gray-600 hover:bg-ymau-dark-red/5 hover:text-gray-900'
                     )}
                   >
                     <Icon
                       className={cn(
                         'h-5 w-5 transition-colors',
                         isActive
-                          ? 'text-indigo-600'
+                          ? 'text-ymau-dark-red'
                           : 'text-gray-400 group-hover:text-gray-600'
                       )}
                     />
                     <span>{item.label}</span>
                     {item.badge && (
-                      <span className="ml-auto text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">
+                      <span className="ml-auto text-xs bg-ymau-dark-red/10 text-ymau-dark-red px-2 py-0.5 rounded-full">
                         {item.badge}
                       </span>
                     )}
@@ -182,23 +187,16 @@ export function Sidebar() {
           className={cn(
             'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
             pathname === '/dashboard/settings'
-              ? 'bg-indigo-50 text-indigo-700'
+              ? 'bg-ymau-dark-red/10 text-ymau-dark-red'
               : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
           )}
         >
           <Settings className={cn(
             'h-5 w-5',
-            pathname === '/dashboard/settings' ? 'text-indigo-600' : 'text-gray-400'
+            pathname === '/dashboard/settings' ? 'text-ymau-dark-red' : 'text-gray-400'
           )} />
           <span>Settings</span>
         </Link>
-        <button
-          onClick={signOut}
-          className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 transition-all duration-200"
-        >
-          <LogOut className="h-5 w-5 text-gray-400" />
-          <span>Sign Out</span>
-        </button>
       </div>
     </aside>
   );

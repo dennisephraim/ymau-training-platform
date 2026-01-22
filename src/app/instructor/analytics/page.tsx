@@ -135,8 +135,8 @@ export default function AnalyticsPage() {
                   {overallCompletionRate}%
                 </p>
               </div>
-              <div className="p-3 bg-purple-100 rounded-full">
-                <BarChart3 className="h-6 w-6 text-purple-600" />
+              <div className="p-3 bg-ymau-orange/20 rounded-full">
+                <BarChart3 className="h-6 w-6 text-ymau-orange" />
               </div>
             </div>
           </CardContent>

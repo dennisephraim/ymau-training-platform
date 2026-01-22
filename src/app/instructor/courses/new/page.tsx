@@ -69,7 +69,7 @@ export default function NewCoursePage() {
       {/* Back Button */}
       <Link
         href="/instructor/courses"
-        className="inline-flex items-center text-sm text-gray-500 hover:text-indigo-600 transition-colors"
+        className="inline-flex items-center text-sm text-gray-500 hover:text-ymau-dark-red transition-colors"
       >
         <ArrowLeft className="h-4 w-4 mr-1" />
         Back to Courses
@@ -77,7 +77,7 @@ export default function NewCoursePage() {
 
       {/* Header */}
       <div className="text-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white mb-4 shadow-lg shadow-indigo-500/25">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-ymau-dark-red to-ymau-orange text-white mb-4 shadow-lg shadow-ymau-dark-red/25">
           <BookOpen className="h-8 w-8" />
         </div>
         <h1 className="text-2xl font-bold text-gray-900">Create New Course</h1>
@@ -89,7 +89,7 @@ export default function NewCoursePage() {
       {/* Progress Steps */}
       <div className="flex items-center justify-center gap-2">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-medium">
+          <div className="w-8 h-8 rounded-full bg-ymau-dark-red text-white flex items-center justify-center text-sm font-medium">
             1
           </div>
           <span className="text-sm font-medium text-gray-900">Details</span>
@@ -148,7 +148,7 @@ export default function NewCoursePage() {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe what students will learn in this course, the skills they'll gain, and any prerequisites..."
                 rows={5}
-                className="block w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                className="block w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-ymau-dark-red focus:outline-none focus:ring-2 focus:ring-ymau-dark-red/20 transition-all"
               />
               <p className="text-xs text-gray-500">
                 A good description helps students understand if this course is right for them
@@ -156,9 +156,9 @@ export default function NewCoursePage() {
             </div>
 
             {/* Tips */}
-            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-5 border border-indigo-100">
+            <div className="bg-gradient-to-br from-ymau-light-indigo/20 to-ymau-orange/10 rounded-xl p-5 border border-ymau-dark-red/20">
               <div className="flex items-start gap-3">
-                <Sparkles className="h-5 w-5 text-indigo-600 flex-shrink-0 mt-0.5" />
+                <Sparkles className="h-5 w-5 text-ymau-dark-red flex-shrink-0 mt-0.5" />
                 <div>
                   <h3 className="font-medium text-gray-900 text-sm">Quick Tips</h3>
                   <ul className="mt-2 space-y-1 text-sm text-gray-600">

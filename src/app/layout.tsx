@@ -16,6 +16,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "YMAU Training Platform",
   description: "Yale Model African Union Training Platform",
+  icons: {
+    icon: "/YMAU%20Crest.png",
+    apple: "/YMAU%20Crest.png",
+  },
 };
 
 export default function RootLayout({

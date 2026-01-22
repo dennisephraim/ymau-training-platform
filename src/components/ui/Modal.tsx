@@ -156,7 +156,7 @@ export function ConfirmDialog({
   const variantClasses = {
     danger: 'bg-red-600 hover:bg-red-700 focus:ring-red-500',
     warning: 'bg-amber-600 hover:bg-amber-700 focus:ring-amber-500',
-    info: 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500',
+    info: 'bg-ymau-dark-red hover:bg-ymau-dark-red/90 focus:ring-ymau-dark-red',
   };
 
   return (

@@ -134,3 +134,19 @@ export async function searchUsersByEmail(emailQuery: string): Promise<User[]> {
     };
   });
 }
+
+/**
+ * Update user profile (photoURL and/or displayName)
+ */
+export async function updateUserProfile(
+  userId: string,
+  updates: { photoURL?: string; displayName?: string }
+): Promise<void> {
+  if (!db) throw new Error('Firestore not initialized');
+
+  const userRef = doc(db, 'users', userId);
+  await updateDoc(userRef, {
+    ...updates,
+    updatedAt: new Date(),
+  });
+}
