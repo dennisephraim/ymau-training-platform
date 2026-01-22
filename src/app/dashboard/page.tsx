@@ -22,6 +22,10 @@ import {
   Sparkles,
   TrendingUp,
   Target,
+  FolderOpen,
+  ClipboardList,
+  Eye,
+  FileText,
 } from 'lucide-react';
 import { Enrollment } from '@/types/enrollment';
 import { Course } from '@/types/course';
@@ -30,6 +34,7 @@ import * as enrollmentService from '@/lib/services/enrollments';
 import * as courseService from '@/lib/services/courses';
 import * as certificateService from '@/lib/services/certificates';
 import * as progressService from '@/lib/services/progress';
+import * as taskService from '@/lib/services/tasks';
 import { formatDuration } from '@/lib/utils/formatters';
 import Image from 'next/image';
 
@@ -46,6 +51,10 @@ interface RecentCourse {
   progress: number;
 }
 
+interface InstructorStats {
+  pendingResponses: number;
+}
+
 export default function DashboardPage() {
   const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
@@ -56,6 +65,11 @@ export default function DashboardPage() {
   });
   const [recentCourses, setRecentCourses] = useState<RecentCourse[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Instructor-specific state
+  const [instructorStats, setInstructorStats] = useState<InstructorStats>({
+    pendingResponses: 0,
+  });
 
   const fetchDashboardData = useCallback(async () => {
     if (!user) return;
@@ -113,6 +127,20 @@ export default function DashboardPage() {
       });
 
       setRecentCourses(recentCoursesData);
+
+      // Fetch instructor-specific data
+      if (user.role === 'instructor' || user.role === 'admin') {
+        const allTasks = await taskService.getInstructorTasks(user.id);
+        
+        // Count pending responses (unreviewed task submissions)
+        let pendingResponses = 0;
+        for (const task of allTasks) {
+          const responses = await taskService.getTaskResponses(task.id);
+          pendingResponses += responses.length;
+        }
+
+        setInstructorStats({ pendingResponses });
+      }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -337,81 +365,107 @@ export default function DashboardPage() {
       {/* Instructor Content */}
       {(user?.role === 'instructor' || user?.role === 'admin') && (
         <div className="grid gap-6 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-ymau-orange" />
-                Quick Actions
-              </CardTitle>
-              <CardDescription>Common instructor tasks</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Link href="/instructor/courses/new" className="block">
-                <Button className="w-full justify-start" variant="outline">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create New Course
-                </Button>
-              </Link>
-              <Link href="/instructor/courses" className="block">
-                <Button className="w-full justify-start" variant="outline">
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  Manage Courses
-                </Button>
-              </Link>
-              <Link href="/instructor/analytics" className="block">
-                <Button className="w-full justify-start" variant="outline">
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  View Analytics
-                </Button>
-              </Link>
-              {user?.role === 'admin' && (
-                <Link href="/admin/users" className="block">
-                  <Button className="w-full justify-start" variant="outline">
-                    <Users className="h-4 w-4 mr-2" />
-                    Manage Users
-                  </Button>
+          {/* Quick Actions */}
+          <Card className="bg-gradient-to-br from-ymau-dark-red to-ymau-dark-red/90 text-white border-0">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-white/20 rounded-lg">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <h3 className="font-semibold">Quick Actions</h3>
+              </div>
+              <div className="space-y-2">
+                <Link href="/instructor/courses/new" className="block">
+                  <button className="w-full flex items-center gap-3 px-3 py-2.5 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-left">
+                    <Plus className="h-4 w-4" />
+                    <span className="text-sm">Create Course</span>
+                  </button>
                 </Link>
-              )}
+                <Link href="/instructor/tasks/new" className="block">
+                  <button className="w-full flex items-center gap-3 px-3 py-2.5 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-left">
+                    <ClipboardList className="h-4 w-4" />
+                    <span className="text-sm">Create Task</span>
+                  </button>
+                </Link>
+                <Link href="/instructor/resources" className="block">
+                  <button className="w-full flex items-center gap-3 px-3 py-2.5 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-left">
+                    <FileText className="h-4 w-4" />
+                    <span className="text-sm">Add Resource</span>
+                  </button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-emerald-500" />
-                Platform Overview
-              </CardTitle>
-              <CardDescription>Quick navigation to key areas</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <QuickLink href="/instructor/courses" label="Your Courses" />
-              <QuickLink href="/instructor/analytics" label="Analytics Dashboard" />
-              {user?.role === 'admin' && (
-                <QuickLink href="/admin/users" label="User Management" />
-              )}
-            </CardContent>
-          </Card>
+          {/* Navigation & Alerts */}
+          <div className="space-y-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4 text-emerald-500" />
+                  Navigation
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <QuickLink href="/instructor/courses" label="My Courses" icon={<FolderOpen className="h-4 w-4" />} />
+                <QuickLink href="/instructor/tasks" label="Tasks" icon={<ClipboardList className="h-4 w-4" />} />
+                <QuickLink href="/instructor/analytics" label="Analytics" icon={<BarChart3 className="h-4 w-4" />} />
+                {user?.role === 'admin' && (
+                  <QuickLink href="/admin/users" label="User Management" icon={<Users className="h-4 w-4" />} />
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Pending Reviews Alert */}
+            {/* {instructorStats.pendingResponses > 0 && (
+              <Card className="border-orange-200 bg-orange-50">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-orange-100 rounded-lg">
+                      <Eye className="h-4 w-4 text-orange-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-orange-900">
+                        {instructorStats.pendingResponses} task{instructorStats.pendingResponses !== 1 ? 's' : ''} to review
+                      </p>
+                      <p className="text-xs text-orange-700 mt-0.5">
+                        Students are waiting for feedback
+                      </p>
+                      <Link href="/instructor/tasks" className="inline-block mt-2">
+                        <Button size="sm" variant="outline" className="h-7 text-xs border-orange-300 text-orange-700 hover:bg-orange-100">
+                          Review Now
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )} */}
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-function QuickLink({ href, label }: { href: string; label: string }) {
+function QuickLink({ href, label, icon }: { href: string; label: string; icon?: React.ReactNode }) {
   return (
     <Link 
       href={href}
-      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group"
     >
-      <span className="text-sm text-gray-700">{label}</span>
-      <ArrowRight className="h-4 w-4 text-gray-400" />
+      <div className="flex items-center gap-2">
+        {icon && <span className="text-gray-400">{icon}</span>}
+        <span className="text-sm text-gray-700">{label}</span>
+      </div>
+      <ArrowRight className="h-4 w-4 text-gray-400 group-hover:translate-x-0.5 transition-transform" />
     </Link>
   );
 }
 
 function getGreeting() {
   const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (hour < 12) return 'Good Morning!';
+  if (hour < 18) return 'Good Afternoon!';
+  return 'Good Evening!';
 }
