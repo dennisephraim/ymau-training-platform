@@ -89,6 +89,58 @@ export async function getAllUsers(): Promise<User[]> {
 }
 
 /**
+ * Get users by role (for instructor picker, etc.)
+ */
+export async function getUsersByRole(role: UserRole): Promise<User[]> {
+  if (!db) throw new Error('Firestore not initialized');
+
+  const usersRef = collection(db, 'users');
+  const q = query(
+    usersRef,
+    where('role', '==', role),
+    where('isActive', '==', true),
+    orderBy('displayName')
+  );
+  const snapshot = await getDocs(q);
+
+  return snapshot.docs.map((doc) => {
+    const data = doc.data() as UserDocument;
+    return {
+      id: doc.id,
+      ...data,
+      createdAt: toDate(data.createdAt as any),
+      updatedAt: toDate(data.updatedAt as any),
+    };
+  });
+}
+
+/**
+ * Get instructors and admins (for assigning to courses/tasks)
+ */
+export async function getInstructorsAndAdmins(): Promise<User[]> {
+  if (!db) throw new Error('Firestore not initialized');
+
+  const usersRef = collection(db, 'users');
+  const q = query(
+    usersRef,
+    where('role', 'in', ['instructor', 'admin']),
+    where('isActive', '==', true),
+    orderBy('displayName')
+  );
+  const snapshot = await getDocs(q);
+
+  return snapshot.docs.map((doc) => {
+    const data = doc.data() as UserDocument;
+    return {
+      id: doc.id,
+      ...data,
+      createdAt: toDate(data.createdAt as any),
+      updatedAt: toDate(data.updatedAt as any),
+    };
+  });
+}
+
+/**
  * Update user role (admin only)
  */
 export async function updateUserRole(userId: string, role: UserRole): Promise<void> {

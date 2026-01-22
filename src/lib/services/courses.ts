@@ -43,6 +43,7 @@ export async function getCourses(): Promise<Course[]> {
     return {
       id: doc.id,
       ...data,
+      instructorIds: data.instructorIds || [],
       createdAt: toDate(data.createdAt as any),
       updatedAt: toDate(data.updatedAt as any),
     };
@@ -61,31 +62,71 @@ export async function getCourse(courseId: string): Promise<Course | null> {
   return {
     id: snapshot.id,
     ...data,
+    instructorIds: data.instructorIds || [],
     createdAt: toDate(data.createdAt as any),
     updatedAt: toDate(data.updatedAt as any),
   };
 }
 
+/**
+ * Get courses where user is creator OR in instructorIds array
+ */
 export async function getInstructorCourses(instructorId: string): Promise<Course[]> {
   if (!db) throw new Error('Firestore not initialized');
 
   const coursesRef = collection(db, 'courses');
-  const q = query(
+  
+  // Query for courses where user is the creator
+  const creatorQuery = query(
     coursesRef,
-    where('instructorId', '==', instructorId),
+    where('createdBy', '==', instructorId),
     orderBy('createdAt', 'desc')
   );
-  const snapshot = await getDocs(q);
+  
+  // Query for courses where user is in instructorIds
+  const instructorQuery = query(
+    coursesRef,
+    where('instructorIds', 'array-contains', instructorId),
+    orderBy('createdAt', 'desc')
+  );
 
-  return snapshot.docs.map((doc) => {
-    const data = doc.data() as CourseDocument;
-    return {
-      id: doc.id,
-      ...data,
-      createdAt: toDate(data.createdAt as any),
-      updatedAt: toDate(data.updatedAt as any),
-    };
-  });
+  const [creatorSnapshot, instructorSnapshot] = await Promise.all([
+    getDocs(creatorQuery),
+    getDocs(instructorQuery),
+  ]);
+
+  // Merge and deduplicate results
+  const courseMap = new Map<string, Course>();
+  
+  const processDocs = (docs: typeof creatorSnapshot.docs) => {
+    docs.forEach((doc) => {
+      if (!courseMap.has(doc.id)) {
+        const data = doc.data() as CourseDocument;
+        courseMap.set(doc.id, {
+          id: doc.id,
+          ...data,
+          instructorIds: data.instructorIds || [],
+          createdAt: toDate(data.createdAt as any),
+          updatedAt: toDate(data.updatedAt as any),
+        });
+      }
+    });
+  };
+
+  processDocs(creatorSnapshot.docs);
+  processDocs(instructorSnapshot.docs);
+
+  // Sort by createdAt descending
+  return Array.from(courseMap.values()).sort(
+    (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+  );
+}
+
+/**
+ * Check if a user has instructor access to a course
+ */
+export function hasInstructorAccess(course: Course, userId: string): boolean {
+  return course.createdBy === userId || course.instructorIds.includes(userId);
 }
 
 export async function getCourseWithChapters(courseId: string): Promise<CourseWithChapters | null> {
@@ -110,6 +151,7 @@ export async function createCourse(
   const coursesRef = collection(db, 'courses');
   const docRef = await addDoc(coursesRef, {
     ...data,
+    instructorIds: data.instructorIds || [],
     chapterCount: 0,
     totalDurationSeconds: 0,
     enrolledCount: 0,
@@ -140,16 +182,40 @@ export async function updateCourse(
 export async function deleteCourse(courseId: string): Promise<void> {
   if (!db) throw new Error('Firestore not initialized');
 
-  // Delete all chapters first
-  const chapters = await getChapters(courseId);
   const batch = writeBatch(db);
 
+  // Delete all chapters first
+  const chapters = await getChapters(courseId);
   for (const chapter of chapters) {
     const chapterRef = doc(db, 'courses', courseId, 'chapters', chapter.id);
     batch.delete(chapterRef);
   }
 
-  // Delete the course
+  // Delete all enrollments for this course
+  const enrollmentsRef = collection(db, 'enrollments');
+  const enrollmentsQuery = query(enrollmentsRef, where('courseId', '==', courseId));
+  const enrollmentsSnapshot = await getDocs(enrollmentsQuery);
+  for (const enrollmentDoc of enrollmentsSnapshot.docs) {
+    batch.delete(enrollmentDoc.ref);
+  }
+
+  // Delete all enrollment codes for this course
+  const codesRef = collection(db, 'enrollmentCodes');
+  const codesQuery = query(codesRef, where('courseId', '==', courseId));
+  const codesSnapshot = await getDocs(codesQuery);
+  for (const codeDoc of codesSnapshot.docs) {
+    batch.delete(codeDoc.ref);
+  }
+
+  // Delete all progress records for this course
+  const progressRef = collection(db, 'progress');
+  const progressQuery = query(progressRef, where('courseId', '==', courseId));
+  const progressSnapshot = await getDocs(progressQuery);
+  for (const progressDoc of progressSnapshot.docs) {
+    batch.delete(progressDoc.ref);
+  }
+
+  // Delete the course itself
   const courseRef = doc(db, 'courses', courseId);
   batch.delete(courseRef);
 
@@ -301,6 +367,7 @@ export async function duplicateCourse(
     description: originalCourse.description,
     thumbnailUrl: originalCourse.thumbnailUrl,
     createdBy,
+    instructorIds: [], // Start with no co-instructors
     isPublished: false, // Start unpublished
     enrollmentOpen: false,
     startDate: null,

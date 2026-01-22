@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { useAuth } from '@/components/auth/AuthContext';
 import { Course } from '@/types/course';
+import { InstructorPicker } from './InstructorPicker';
 import * as courseService from '@/lib/services/courses';
 import { Calendar, Users } from 'lucide-react';
 
@@ -15,10 +16,18 @@ interface CourseFormProps {
   mode: 'create' | 'edit';
 }
 
-// Helper to format date for input
-function formatDateForInput(date: Date | null): string {
+// Helper to format date for input (handles Date, Firestore Timestamp, or null)
+function formatDateForInput(date: Date | { toDate: () => Date } | null): string {
   if (!date) return '';
-  return date.toISOString().split('T')[0];
+  // Handle Firestore Timestamp
+  if (typeof date === 'object' && 'toDate' in date && typeof date.toDate === 'function') {
+    return date.toDate().toISOString().split('T')[0];
+  }
+  // Handle regular Date object
+  if (date instanceof Date) {
+    return date.toISOString().split('T')[0];
+  }
+  return '';
 }
 
 export function CourseForm({ course, mode }: CourseFormProps) {
@@ -34,6 +43,7 @@ export function CourseForm({ course, mode }: CourseFormProps) {
   const [startDate, setStartDate] = useState(formatDateForInput(course?.startDate || null));
   const [endDate, setEndDate] = useState(formatDateForInput(course?.endDate || null));
   const [maxStudents, setMaxStudents] = useState<string>(course?.maxStudents?.toString() || '');
+  const [instructorIds, setInstructorIds] = useState<string[]>(course?.instructorIds || []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,6 +68,7 @@ export function CourseForm({ course, mode }: CourseFormProps) {
           description: description.trim(),
           thumbnailUrl: null,
           createdBy: user.id,
+          instructorIds,
           isPublished,
           enrollmentOpen,
           startDate: startDate ? new Date(startDate) : null,
@@ -69,6 +80,7 @@ export function CourseForm({ course, mode }: CourseFormProps) {
         await courseService.updateCourse(course.id, {
           title: title.trim(),
           description: description.trim(),
+          instructorIds,
           isPublished,
           enrollmentOpen,
           startDate: startDate ? new Date(startDate) : null,
@@ -148,6 +160,21 @@ export function CourseForm({ course, mode }: CourseFormProps) {
             <label htmlFor="enrollmentOpen" className="text-sm text-gray-700">
               Open enrollment (allow students to enroll in this course)
             </label>
+          </div>
+
+          {/* Co-Instructors */}
+          <div className="border-t border-gray-200 pt-6 mt-6">
+            <InstructorPicker
+              selectedIds={instructorIds}
+              onChange={setInstructorIds}
+              createdById={course?.createdBy}
+              currentUserId={user?.id}
+              disabled={loading}
+              label="Co-Instructors"
+            />
+            <p className="text-xs text-gray-500 mt-2">
+              Add other instructors who can manage this course content and view student progress
+            </p>
           </div>
 
           {/* Enrollment Settings */}

@@ -19,7 +19,6 @@ import {
   BarChart3,
   CheckCircle,
   ArrowRight,
-  Compass,
   Sparkles,
   TrendingUp,
   Target,
@@ -70,24 +69,15 @@ export default function DashboardPage() {
       // Fetch certificates
       const certificates = await certificateService.getStudentCertificates(user.id);
 
-      // Calculate stats
-      const inProgress = enrollments.filter((e) => e.status === 'active').length;
-      const completed = enrollments.filter((e) => e.status === 'completed').length;
-
-      setStats({
-        enrolledCourses: enrollments.length,
-        inProgress,
-        completed,
-        certificates: certificates.length,
-      });
-
-      // Get recent courses with progress
+      // Get recent courses with progress (and filter out orphaned enrollments)
       const recentEnrollments = enrollments.slice(0, 3);
       const recentCoursesData: RecentCourse[] = [];
+      const validEnrollmentIds: string[] = [];
 
       for (const enrollment of recentEnrollments) {
         const course = await courseService.getCourse(enrollment.courseId);
         if (course) {
+          validEnrollmentIds.push(enrollment.id);
           const progress = await progressService.getCourseProgress(
             enrollment.id,
             enrollment.courseId
@@ -99,6 +89,28 @@ export default function DashboardPage() {
           });
         }
       }
+
+      // Filter enrollments to only count valid ones (where course still exists)
+      // For full accuracy, check all enrollments for valid courses
+      let validEnrollmentCount = 0;
+      let inProgressCount = 0;
+      let completedCount = 0;
+
+      for (const enrollment of enrollments) {
+        const course = await courseService.getCourse(enrollment.courseId);
+        if (course) {
+          validEnrollmentCount++;
+          if (enrollment.status === 'active') inProgressCount++;
+          if (enrollment.status === 'completed') completedCount++;
+        }
+      }
+
+      setStats({
+        enrolledCourses: validEnrollmentCount,
+        inProgress: inProgressCount,
+        completed: completedCount,
+        certificates: certificates.length,
+      });
 
       setRecentCourses(recentCoursesData);
     } catch (error) {
@@ -179,7 +191,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Welcome Header */}
-      <div className="relative overflow-hidden rounded-2xl p-8 text-white" style={{ backgroundImage: 'url(/YMAU%20Logos%20%28Banner%29.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundColor: '#1e1b4b' }}>
+      <div className="relative overflow-hidden rounded-2xl p-8 text-white h-58" style={{ backgroundImage: 'url(/YMAU%20Logos%20%28Banner%29.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundColor: '#1e1b4b' }}>
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative">
           <div className="flex items-center gap-2 text-white/80 text-sm mb-2">
@@ -194,7 +206,7 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-bold">Welcome back, {firstName}!</h1>
           <p className="mt-2 text-white/80 max-w-xl">
             {user?.role === 'student' 
-              ? "Continue your learning journey. Every video watched brings you closer to your goals."
+              ? "Continue your activities. Every video watched brings you closer to your goals."
               : user?.role === 'instructor'
               ? "Manage your courses and track student progress from your dashboard."
               : "Full access to manage users, courses, and system settings."}
@@ -232,12 +244,12 @@ export default function DashboardPage() {
       {/* Student Content */}
       {user?.role === 'student' && (
         <>
-          {/* Continue Learning Section */}
+          {/* Continue Activities Section */}
           {recentCourses.length > 0 ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">Continue Learning</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">Continue Activities</h2>
                   <p className="text-sm text-gray-500">Pick up where you left off</p>
                 </div>
                 <Link href="/dashboard/courses">
@@ -302,14 +314,14 @@ export default function DashboardPage() {
             <Card className="border-dashed border-2 border-ymau-dark-red/30 bg-ymau-dark-red/5">
               <CardContent className="py-12">
                 <EmptyState
-                  icon={<Compass className="h-8 w-8" />}
-                  title="Start Your Learning Journey"
-                  description="You're not enrolled in any courses yet. Browse available courses or enter an enrollment code from your instructor."
+                  icon={<BookOpen className="h-8 w-8" />}
+                  title="Start Your Activities"
+                  description="You're not enrolled in any courses yet. Go to My Activities to enter an enrollment code from your instructor."
                   action={
-                    <Link href="/dashboard/enroll">
+                    <Link href="/dashboard/courses">
                       <Button>
                         <Plus className="h-4 w-4 mr-2" />
-                        Explore Courses
+                        Join Course
                       </Button>
                     </Link>
                   }

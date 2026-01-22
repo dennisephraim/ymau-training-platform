@@ -4,6 +4,7 @@ export interface Course {
   description: string;
   thumbnailUrl: string | null;
   createdBy: string;
+  instructorIds: string[]; // Additional instructors with full access
   createdAt: Date;
   updatedAt: Date;
   isPublished: boolean;
@@ -22,6 +23,7 @@ export interface CourseDocument {
   description: string;
   thumbnailUrl: string | null;
   createdBy: string;
+  instructorIds: string[]; // Additional instructors with full access
   createdAt: Date;
   updatedAt: Date;
   isPublished: boolean;

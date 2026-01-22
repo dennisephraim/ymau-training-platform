@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useAuth } from '@/components/auth/AuthContext';
+import { InstructorPicker } from '@/components/courses/InstructorPicker';
 import * as courseService from '@/lib/services/courses';
 import { 
   ArrowLeft, 
@@ -26,6 +27,7 @@ export default function NewCoursePage() {
   
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [instructorIds, setInstructorIds] = useState<string[]>([]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,6 +51,7 @@ export default function NewCoursePage() {
         description: description.trim(),
         thumbnailUrl: null,
         createdBy: user.id,
+        instructorIds,
         isPublished: false,
         enrollmentOpen: false,
         startDate: null,
@@ -152,6 +155,20 @@ export default function NewCoursePage() {
               />
               <p className="text-xs text-gray-500">
                 A good description helps students understand if this course is right for them
+              </p>
+            </div>
+
+            {/* Additional Instructors */}
+            <div className="pt-4 border-t border-gray-100">
+              <InstructorPicker
+                selectedIds={instructorIds}
+                onChange={setInstructorIds}
+                currentUserId={user?.id}
+                disabled={loading}
+                label="Co-Instructors (Optional)"
+              />
+              <p className="text-xs text-gray-500 mt-2">
+                Add other instructors who can manage this course content
               </p>
             </div>
 

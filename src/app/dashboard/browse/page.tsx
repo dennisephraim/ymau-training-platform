@@ -3,12 +3,12 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-// Redirect to unified explore page
+// Redirect to my activities page
 export default function BrowseCoursesPage() {
   const router = useRouter();
   
   useEffect(() => {
-    router.replace('/dashboard/enroll');
+    router.replace('/dashboard/courses');
   }, [router]);
 
   return (

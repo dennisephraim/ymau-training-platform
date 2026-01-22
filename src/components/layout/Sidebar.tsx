@@ -11,9 +11,10 @@ import {
   Settings,
   BarChart3,
   LayoutDashboard,
-  Compass,
   FolderOpen,
   LogOut,
+  FileText,
+  ClipboardList,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/components/auth/AuthContext';
@@ -42,24 +43,17 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    title: 'Learning',
+    title: 'Activities',
     items: [
       {
-        label: 'My Courses',
+        label: 'My Activities',
         href: '/dashboard/courses',
         icon: BookOpen,
       },
       {
-        label: 'Explore',
-        href: '/dashboard/enroll',
-        icon: Compass,
-        roles: ['student'],
-      },
-      {
-        label: 'Progress',
-        href: '/dashboard/progress',
-        icon: GraduationCap,
-        roles: ['student'],
+        label: 'Resources',
+        href: '/dashboard/resources',
+        icon: FileText,
       },
       {
         label: 'Certificates',
@@ -75,6 +69,18 @@ const navSections: NavSection[] = [
         label: 'My Courses',
         href: '/instructor/courses',
         icon: FolderOpen,
+        roles: ['instructor', 'admin'],
+      },
+      {
+        label: 'Tasks',
+        href: '/instructor/tasks',
+        icon: ClipboardList,
+        roles: ['instructor', 'admin'],
+      },
+      {
+        label: 'Resources',
+        href: '/instructor/resources',
+        icon: FileText,
         roles: ['instructor', 'admin'],
       },
       {

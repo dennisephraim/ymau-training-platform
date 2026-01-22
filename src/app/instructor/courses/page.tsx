@@ -17,16 +17,21 @@ import {
   Users,
   ChevronRight,
   Copy,
-  PlayCircle
+  PlayCircle,
+  Trash2
 } from 'lucide-react';
-import { useCourses } from '@/lib/hooks/useCourses';
+import { useInstructorCourses } from '@/lib/hooks/useCourses';
 import { useAuth } from '@/components/auth/AuthContext';
 import { Course } from '@/types/course';
-import { duplicateCourse } from '@/lib/services/courses';
+import { duplicateCourse, deleteCourse } from '@/lib/services/courses';
 import { formatDuration } from '@/lib/utils/formatters';
 
 export default function ManageCoursesPage() {
-  const { courses, loading, error, refetch } = useCourses();
+  const { user } = useAuth();
+  const { courses, loading, error, refetch } = useInstructorCourses(
+    user?.id ?? null,
+    user?.role === 'admin'
+  );
 
   if (loading) {
     return (
@@ -119,6 +124,7 @@ function PageHeader() {
 function CourseCard({ course, onUpdate }: { course: Course; onUpdate: () => void }) {
   const [showMenu, setShowMenu] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
 
@@ -143,8 +149,30 @@ function CourseCard({ course, onUpdate }: { course: Course; onUpdate: () => void
     }
   };
 
+  const handleDelete = async () => {
+    if (!user) return;
+    
+    const confirmed = confirm(
+      `Are you sure you want to delete "${course.title}"?\n\nThis will permanently delete the course and all its content. Students will lose access to this course.\n\nThis action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    setDeleting(true);
+    setShowMenu(false);
+    
+    try {
+      await deleteCourse(course.id);
+      onUpdate();
+    } catch (err) {
+      console.error('Error deleting course:', err);
+      alert('Failed to delete course');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
-    <div className={`group relative bg-white rounded-xl border border-gray-200 hover:border-ymau-dark-red/30 hover:shadow-lg hover:shadow-ymau-dark-red/10 transition-all duration-300 ${duplicating ? 'opacity-50' : ''}`}>
+    <div className={`group relative bg-white rounded-xl border border-gray-200 hover:border-ymau-dark-red/30 hover:shadow-lg hover:shadow-ymau-dark-red/10 transition-all duration-300 ${duplicating || deleting ? 'opacity-50' : ''}`}>
       {/* Course Content */}
       <div className="p-5">
         <div className="flex items-start gap-4">
@@ -207,6 +235,14 @@ function CourseCard({ course, onUpdate }: { course: Course; onUpdate: () => void
                       >
                         <Copy className="h-4 w-4 text-gray-400" />
                         Duplicate Course
+                      </button>
+                      <hr className="my-1.5 border-gray-100" />
+                      <button
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                        onClick={handleDelete}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete Course
                       </button>
                     </div>
                   </>
