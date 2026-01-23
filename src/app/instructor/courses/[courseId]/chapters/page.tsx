@@ -355,9 +355,9 @@ function ChapterForm({
         setError('Please select a valid video file');
         return;
       }
-      // Validate file size (500MB max)
-      if (file.size > 500 * 1024 * 1024) {
-        setError('Video file must be less than 500MB');
+      // Validate file size (2GB max)
+      if (file.size > 2 * 1024 * 1024 * 1024) {
+        setError('Video file must be less than 2GB');
         return;
       }
       setPendingVideoFile(file);
@@ -617,7 +617,7 @@ function ChapterForm({
                       />
                     </label>
                     <p className="mt-1 text-xs text-gray-500">
-                      MP4, WebM, or MOV up to 500MB
+                      MP4, WebM, or MOV up to 2GB
                     </p>
                   </div>
                 </div>

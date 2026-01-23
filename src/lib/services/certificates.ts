@@ -75,7 +75,7 @@ export async function generateQRCode(verificationUrl: string): Promise<string> {
  * Get the verification URL for a certificate
  */
 export function getVerificationUrl(verificationCode: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  const baseUrl = 'https://ymau--ymau-delegate-hub.us-central1.hosted.app';
   return `${baseUrl}/verify/${verificationCode}`;
 }
 

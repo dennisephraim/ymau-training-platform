@@ -34,10 +34,10 @@ export function VideoUpload({
       return;
     }
 
-    // Validate file size (max 500MB)
-    const maxSize = 500 * 1024 * 1024;
+    // Validate file size (max 2GB)
+    const maxSize = 2 * 1024 * 1024 * 1024;
     if (file.size > maxSize) {
-      setError('File size must be less than 500MB');
+      setError('File size must be less than 2GB');
       return;
     }
 
@@ -155,7 +155,7 @@ export function VideoUpload({
       </Button>
 
       <p className="text-xs text-gray-500 text-center">
-        Supported formats: MP4, WebM, MOV. Max size: 500MB
+        Supported formats: MP4, WebM, MOV. Max size: 2GB
       </p>
     </div>
   );
