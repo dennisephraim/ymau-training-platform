@@ -219,7 +219,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Welcome Header */}
-      <div className="relative overflow-hidden rounded-2xl p-8 text-white h-58" style={{ backgroundImage: 'url(/YMAU%20Logos%20%28Banner%29.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundColor: '#1e1b4b' }}>
+      <div className="relative overflow-hidden rounded-2xl p-8 text-white h-58" style={{ backgroundImage: 'url(/ymau-banner.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundColor: '#1e1b4b' }}>
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative">
           <div className="flex items-center gap-2 text-white/80 text-sm mb-2">

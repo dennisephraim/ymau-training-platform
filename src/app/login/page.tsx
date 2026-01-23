@@ -35,7 +35,7 @@ export default function LoginPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center" style={{ backgroundImage: 'url(/YMAU%20Logos%20%28Banner%29.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <div className="flex min-h-screen items-center justify-center" style={{ backgroundImage: 'url(/ymau-banner.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
         <div className="absolute inset-0 bg-black/40"></div>
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white relative z-10" />
       </div>
@@ -47,7 +47,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 relative" style={{ backgroundImage: 'url(/YMAU%20Logos%20%28Banner%29.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+    <div className="flex min-h-screen items-center justify-center px-4 relative" style={{ backgroundImage: 'url(/ymau-banner.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
       {/* Dark overlay for readability */}
       <div className="absolute inset-0 bg-black/40" />
       
