@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useEffect } from 'react';
+import { use, useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Plus, GripVertical, Edit, Trash2, Video, Clock, HelpCircle, CheckCircle, ChevronDown, ChevronUp, Loader2, FileText } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -19,8 +19,11 @@ export default function ChaptersPage({ params }: { params: Promise<{ courseId: s
   const { courseId } = use(params);
   const { course, loading, error, refetch } = useCourse(courseId);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [editingChapter, setEditingChapter] = useState<Chapter | null>(null);
+  const [editingChapterId, setEditingChapterId] = useState<string | null>(null);
   const [chapterQuizzes, setChapterQuizzes] = useState<Map<string, ChapterQuiz>>(new Map());
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [isReordering, setIsReordering] = useState(false);
 
   // Fetch quizzes for all chapters
   useEffect(() => {
@@ -104,24 +107,6 @@ export default function ChaptersPage({ params }: { params: Promise<{ courseId: s
         />
       )}
 
-      {/* Edit Chapter Modal */}
-      {editingChapter && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="fixed inset-0 bg-black/50" onClick={() => setEditingChapter(null)} />
-          <div className="relative z-10 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-            <ChapterForm
-              courseId={courseId}
-              chapter={editingChapter}
-              onClose={() => setEditingChapter(null)}
-              onSaved={() => {
-                setEditingChapter(null);
-                refetch();
-              }}
-            />
-          </div>
-        </div>
-      )}
-
       {course.chapters.length === 0 && !showAddForm ? (
         <Card>
           <CardContent className="py-12">
@@ -137,20 +122,56 @@ export default function ChaptersPage({ params }: { params: Promise<{ courseId: s
       ) : course.chapters.length > 0 ? (
         <div className="space-y-2">
           {course.chapters.map((chapter, index) => (
-            <ChapterItem
-              key={chapter.id}
-              chapter={chapter}
-              courseId={courseId}
-              quiz={chapterQuizzes.get(chapter.id)}
-              index={index}
-              onEdit={() => setEditingChapter(chapter)}
-              onDelete={async () => {
-                if (confirm('Are you sure you want to delete this chapter?')) {
-                  await courseService.deleteChapter(courseId, chapter.id);
+            editingChapterId === chapter.id ? (
+              <ChapterForm
+                key={chapter.id}
+                courseId={courseId}
+                chapter={chapter}
+                onClose={() => setEditingChapterId(null)}
+                onSaved={() => {
+                  setEditingChapterId(null);
                   refetch();
-                }
-              }}
-            />
+                }}
+              />
+            ) : (
+              <ChapterItem
+                key={chapter.id}
+                chapter={chapter}
+                courseId={courseId}
+                quiz={chapterQuizzes.get(chapter.id)}
+                index={index}
+                isDragging={draggedIndex === index}
+                isDragOver={dragOverIndex === index}
+                isReordering={isReordering}
+                onDragStart={() => setDraggedIndex(index)}
+                onDragEnd={async () => {
+                  if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
+                    setIsReordering(true);
+                    try {
+                      // Create new order of chapter IDs
+                      const chapterIds = [...course.chapters.map(ch => ch.id)];
+                      const [movedId] = chapterIds.splice(draggedIndex, 1);
+                      chapterIds.splice(dragOverIndex, 0, movedId);
+                      await courseService.reorderChapters(courseId, chapterIds);
+                      await refetch();
+                    } catch (err) {
+                      console.error('Failed to reorder chapters:', err);
+                    }
+                    setIsReordering(false);
+                  }
+                  setDraggedIndex(null);
+                  setDragOverIndex(null);
+                }}
+                onDragOver={() => setDragOverIndex(index)}
+                onEdit={() => setEditingChapterId(chapter.id)}
+                onDelete={async () => {
+                  if (confirm('Are you sure you want to delete this chapter?')) {
+                    await courseService.deleteChapter(courseId, chapter.id);
+                    refetch();
+                  }
+                }}
+              />
+            )
           ))}
         </div>
       ) : null}
@@ -163,6 +184,12 @@ function ChapterItem({
   courseId,
   quiz,
   index,
+  isDragging,
+  isDragOver,
+  isReordering,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
   onEdit,
   onDelete,
 }: {
@@ -170,14 +197,32 @@ function ChapterItem({
   courseId: string;
   quiz?: ChapterQuiz;
   index: number;
+  isDragging: boolean;
+  isDragOver: boolean;
+  isReordering: boolean;
+  onDragStart: () => void;
+  onDragEnd: () => void;
+  onDragOver: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }) {
   return (
-    <Card>
+    <Card 
+      className={`transition-all ${isDragging ? 'opacity-50 scale-[0.98]' : ''} ${isDragOver ? 'border-ymau-dark-red border-2' : ''} ${isReordering ? 'pointer-events-none' : ''}`}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = 'move';
+        onDragStart();
+      }}
+      onDragEnd={onDragEnd}
+      onDragOver={(e) => {
+        e.preventDefault();
+        onDragOver();
+      }}
+    >
       <CardContent className="py-4">
         <div className="flex items-center space-x-4">
-          <div className="flex items-center text-gray-400 cursor-move">
+          <div className="flex items-center text-gray-400 cursor-grab active:cursor-grabbing">
             <GripVertical className="h-5 w-5" />
           </div>
           <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-sm font-medium text-gray-600">

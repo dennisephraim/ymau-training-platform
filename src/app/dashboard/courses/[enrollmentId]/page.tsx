@@ -794,8 +794,8 @@ function ChapterVideoPlayer({
           )}
         </CardHeader>
         <CardContent>
-          {/* Text content display area with fixed height */}
-          <div className="aspect-video bg-gray-50 rounded-lg border border-gray-200 overflow-auto p-6">
+          {/* Text content display area - compact height */}
+          <div className="h-[370px] bg-gray-50 rounded-lg border border-gray-200 overflow-auto p-6">
             <div className="prose prose-sm max-w-none">
               {chapter.textContent ? (
                 <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
@@ -836,7 +836,7 @@ function ChapterVideoPlayer({
   // Render video chapter content (default)
   return (
     <Card>
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-1">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">{chapter.title}</CardTitle>
           {isCompleted && (
@@ -865,18 +865,6 @@ function ChapterVideoPlayer({
             <p className="text-gray-500">Video not available</p>
           </div>
         )}
-
-        {/* Chapter info */}
-        <div className="mt-4 flex items-center justify-between text-sm">
-          <div className="flex items-center space-x-4 text-gray-500">
-            <span>Duration: {formatDuration(chapter.durationSeconds)}</span>
-            <span>|</span>
-            <span>{watchedPercentage.toFixed(0)}% watched</span>
-          </div>
-          {isSaving && (
-            <span className="text-blue-600 text-xs">Saving progress...</span>
-          )}
-        </div>
       </CardContent>
     </Card>
   );
