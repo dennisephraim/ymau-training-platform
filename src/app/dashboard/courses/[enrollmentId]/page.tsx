@@ -330,16 +330,16 @@ export default function CourseViewerPage({
       {/* Sticky Header */}
       <div className="sticky -top-6 z-10 -mx-6 -mt-6 mb-6">
         <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3">
                 <Link href="/dashboard/courses" title="Back to My Courses">
                   <Button variant="ghost" size="icon" className="shrink-0">
                     <ArrowLeft className="h-5 w-5" />
                   </Button>
                 </Link>
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900">{course.title}</h1>
+                <div className="min-w-0">
+                  <h1 className="text-xl font-bold text-gray-900 truncate">{course.title}</h1>
                   <div className="flex items-center space-x-3 mt-0.5 text-sm text-gray-500">
                     <span>{chapters.length} chapters</span>
                     <span>•</span>
@@ -353,21 +353,55 @@ export default function CourseViewerPage({
               </div>
             </div>
             
-            {/* Certificate Badge - shown when certificate exists */}
-            {certificate && (
-              <div className="flex items-center gap-3 bg-green-50/90 backdrop-blur-sm border border-green-200 rounded-xl px-4 py-2">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  <span className="text-sm font-medium text-green-700">Completed</span>
+            {/* Certificate Badge - shown when certificate exists, or Get Certificate when complete */}
+            {(() => {
+              // Check if all chapters with quizzes have been passed
+              const allChaptersComplete = chapters.length > 0 && chapters.every((ch) => {
+                const quiz = chapterQuizzes.get(ch.id);
+                const qProgress = quizProgress.get(ch.id);
+                // If no quiz or quiz disabled, chapter is complete
+                // If quiz exists and is enabled, check if passed
+                return !quiz || !quiz.settings.enabled || qProgress?.passed;
+              });
+              
+              const showGetCertificate = !certificate && allChaptersComplete;
+              
+              return (
+                <div className="shrink-0">
+                  {certificate ? (
+                    <div className="flex items-center gap-3 bg-green-50/90 backdrop-blur-sm border border-green-200 rounded-xl px-4 py-2">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <span className="text-sm font-medium text-green-700">Completed</span>
+                      </div>
+                      <Link href="/dashboard/certificates">
+                        <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                          <Award className="h-4 w-4 mr-1" />
+                          View Certificate
+                        </Button>
+                      </Link>
+                    </div>
+                  ) : showGetCertificate ? (
+                    <div className="flex items-center gap-3 bg-yellow-50/90 backdrop-blur-sm border border-yellow-200 rounded-xl px-4 py-2">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-5 w-5 text-yellow-600" />
+                        <span className="text-sm font-medium text-yellow-700">Course Complete!</span>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={handleGenerateCertificate}
+                        disabled={isGeneratingCertificate}
+                        isLoading={isGeneratingCertificate}
+                        className="bg-yellow-600 hover:bg-yellow-700"
+                      >
+                        <Award className="h-4 w-4 mr-1" />
+                        {isGeneratingCertificate ? 'Generating...' : 'Get Certificate'}
+                      </Button>
+                    </div>
+                  ) : null}
                 </div>
-                <Link href="/dashboard/certificates">
-                  <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                    <Award className="h-4 w-4 mr-1" />
-                    View Certificate
-                  </Button>
-                </Link>
-              </div>
-            )}
+              );
+            })()}
           </div>
 
           {/* Course progress bar */}

@@ -5,7 +5,8 @@ import { useAuth } from '@/components/auth/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
-import { Camera, Upload, X } from 'lucide-react';
+import { Input } from '@/components/ui/Input';
+import { Camera, Upload, X, Pencil, Check } from 'lucide-react';
 import { uploadProfilePicture } from '@/lib/services/storage';
 import { updateUserProfile } from '@/lib/services/users';
 
@@ -14,6 +15,9 @@ export default function SettingsPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState(false);
+  const [displayName, setDisplayName] = useState(user?.displayName || '');
+  const [savingName, setSavingName] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const roleLabels = {
@@ -48,6 +52,28 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSaveName = async () => {
+    if (!user || !displayName.trim()) return;
+
+    setError(null);
+    setSavingName(true);
+
+    try {
+      await updateUserProfile(user.id, { displayName: displayName.trim() });
+      await refreshUser();
+      setEditingName(false);
+    } catch (err: any) {
+      setError(err.message || 'Failed to update display name');
+    } finally {
+      setSavingName(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setDisplayName(user?.displayName || '');
+    setEditingName(false);
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -66,22 +92,23 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center space-x-4">
-            <div className="relative group">
-              <Avatar
-                src={user?.photoURL}
-                fallback={user?.displayName || user?.email}
-                size="xl"
-              />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer disabled:cursor-not-allowed"
-              >
-                {uploading ? (
-                  <div className="text-white text-sm font-medium">{uploadProgress}%</div>
-                ) : (
-                  <Camera className="h-6 w-6 text-white" />
-                )}
+            <div className="flex flex-col items-center">
+              <div className="relative group">
+                <Avatar
+                  src={user?.photoURL}
+                  fallback={user?.displayName || user?.email}
+                  size="xl"
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer disabled:cursor-not-allowed"
+                >
+                  {uploading ? (
+                    <div className="text-white text-sm font-medium">{uploadProgress}%</div>
+                  ) : (
+                    <Camera className="h-6 w-6 text-white" />
+                  )}
               </button>
               <input
                 ref={fileInputRef}
@@ -90,9 +117,57 @@ export default function SettingsPage() {
                 onChange={handleFileSelect}
                 className="hidden"
               />
+              </div>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="text-xs text-gray-500 hover:text-ymau-dark-red transition-colors mt-1.5 cursor-pointer"
+              >
+                Click to change
+              </button>
             </div>
             <div className="flex-1">
-              <p className="font-medium text-gray-900">{user?.displayName}</p>
+              {editingName ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="Enter your name"
+                    className="max-w-xs"
+                    autoFocus
+                  />
+                  <Button
+                    size="sm"
+                    onClick={handleSaveName}
+                    disabled={savingName || !displayName.trim()}
+                    isLoading={savingName}
+                  >
+                    <Check className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleCancelEdit}
+                    disabled={savingName}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <p className="font-medium text-gray-900">{user?.displayName}</p>
+                  <button
+                    onClick={() => {
+                      setDisplayName(user?.displayName || '');
+                      setEditingName(true);
+                    }}
+                    className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                    title="Edit name"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
               <p className="text-sm text-gray-500">{user?.email}</p>
             </div>
           </div>

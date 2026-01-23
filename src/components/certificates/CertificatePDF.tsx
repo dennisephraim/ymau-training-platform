@@ -73,6 +73,8 @@ const styles = StyleSheet.create({
   },
   body: {
     alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
     marginBottom: 15,
   },
   presentedTo: {
@@ -190,6 +192,20 @@ const styles = StyleSheet.create({
     borderBottom: '2pt solid #c4a052',
     borderRight: '2pt solid #c4a052',
   },
+  logoTopLeft: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    width: 50,
+    height: 50,
+  },
+  logoTopRight: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    width: 50,
+    height: 50,
+  },
 });
 
 // Certificate PDF Document Component
@@ -206,6 +222,10 @@ export function CertificatePDF({ data }: { data: CertificateData }) {
           <View style={[styles.decorativeCorner, styles.topRight]} />
           <View style={[styles.decorativeCorner, styles.bottomLeft]} />
           <View style={[styles.decorativeCorner, styles.bottomRight]} />
+
+          {/* Logo in top corners */}
+          <Image style={styles.logoTopLeft} src="/YMAU Crest.png" />
+          <Image style={styles.logoTopRight} src="/YMAU Crest.png" />
 
           {/* Header */}
           <View style={styles.header}>
