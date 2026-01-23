@@ -5,6 +5,7 @@ import {
   getDoc,
   addDoc,
   updateDoc,
+  deleteDoc,
   query,
   where,
   orderBy,
@@ -402,5 +403,59 @@ export async function rejectRequest(
     reviewedBy,
     reviewedAt: serverTimestamp(),
     rejectionReason: reason || null,
+  });
+}
+
+/**
+ * Remove a student from a course
+ * This deletes all related data: enrollment, progress, quiz attempts, and certificate
+ */
+export async function removeStudentFromCourse(
+  enrollmentId: string,
+  courseId: string,
+  studentId: string
+): Promise<void> {
+  if (!db) throw new Error('Firestore not initialized');
+
+  // 1. Delete chapter progress documents
+  const progressRef = collection(db, 'chapterProgress');
+  const progressQuery = query(progressRef, where('enrollmentId', '==', enrollmentId));
+  const progressSnapshot = await getDocs(progressQuery);
+  
+  const progressDeletePromises = progressSnapshot.docs.map((doc) => deleteDoc(doc.ref));
+  await Promise.all(progressDeletePromises);
+
+  // 2. Delete quiz attempts
+  const attemptsRef = collection(db, 'quizAttempts');
+  const attemptsQuery = query(
+    attemptsRef,
+    where('courseId', '==', courseId),
+    where('studentId', '==', studentId)
+  );
+  const attemptsSnapshot = await getDocs(attemptsQuery);
+  
+  const attemptsDeletePromises = attemptsSnapshot.docs.map((doc) => deleteDoc(doc.ref));
+  await Promise.all(attemptsDeletePromises);
+
+  // 3. Delete certificate if exists
+  const certificatesRef = collection(db, 'certificates');
+  const certificateQuery = query(
+    certificatesRef,
+    where('courseId', '==', courseId),
+    where('studentId', '==', studentId)
+  );
+  const certificateSnapshot = await getDocs(certificateQuery);
+  
+  const certificateDeletePromises = certificateSnapshot.docs.map((doc) => deleteDoc(doc.ref));
+  await Promise.all(certificateDeletePromises);
+
+  // 4. Delete the enrollment document
+  const enrollmentRef = doc(db, 'enrollments', enrollmentId);
+  await deleteDoc(enrollmentRef);
+
+  // 5. Decrement the enrolled count on the course
+  const courseRef = doc(db, 'courses', courseId);
+  await updateDoc(courseRef, {
+    enrolledCount: increment(-1),
   });
 }

@@ -104,15 +104,8 @@ export function Header({ title, subtitle, actions }: HeaderProps) {
                   href="/dashboard/settings"
                   className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                 >
-                  <UserIcon className="h-4 w-4 text-gray-400" />
-                  <span>Profile Settings</span>
-                </a>
-                <a
-                  href="/dashboard/settings"
-                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                >
                   <Settings className="h-4 w-4 text-gray-400" />
-                  <span>Preferences</span>
+                  <span>Settings</span>
                 </a>
               </div>
               

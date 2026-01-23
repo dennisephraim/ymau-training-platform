@@ -139,6 +139,19 @@ export default function StudentsPage({
     }
   };
 
+  const handleRemoveStudent = async (enrollment: Enrollment & { user?: User }) => {
+    const studentName = enrollment.user?.displayName || enrollment.user?.email || 'this student';
+    if (!confirm(`Are you sure you want to remove ${studentName} from this course? This will delete all their progress, quiz attempts, and certificate (if any). This action cannot be undone.`)) {
+      return;
+    }
+    try {
+      await enrollmentService.removeStudentFromCourse(enrollment.id, courseId, enrollment.studentId);
+      fetchData();
+    } catch (err) {
+      console.error('Error removing student:', err);
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -158,20 +171,20 @@ export default function StudentsPage({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <Link
-          href={`/instructor/courses`}
-          className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
-        >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Back to Courses
+      <div className="flex items-start gap-3">
+        <Link href="/instructor/courses" title="Back to Courses">
+          <Button variant="ghost" size="icon" className="shrink-0 mt-0.5">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900 mt-2">
-          {course?.title || 'Students'}
-        </h1>
-        <p className="text-gray-600 mt-1">
-          Manage enrolled students and enrollment settings
-        </p>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {course?.title || 'Students'}
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Manage enrolled students and enrollment settings
+          </p>
+        </div>
       </div>
 
       {/* Quick Stats */}
@@ -373,6 +386,15 @@ export default function StudentsPage({
                         >
                           {enrollment.status}
                         </Badge>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveStudent(enrollment)}
+                          className="text-gray-400 hover:text-red-600 hover:bg-red-50"
+                          title="Remove student"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   ))}

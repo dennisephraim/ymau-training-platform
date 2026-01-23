@@ -255,7 +255,7 @@ function CourseAnalyticsCard({ analytics }: { analytics: CourseAnalytics }) {
           </div>
         </div>
 
-        <Link href={`/instructor/courses/${course.id}/iterations`}>
+        <Link href={`/instructor/courses/${course.id}/students`}>
           <Button variant="outline" size="sm" className="ml-4">
             <Eye className="h-4 w-4 mr-1" />
             Details

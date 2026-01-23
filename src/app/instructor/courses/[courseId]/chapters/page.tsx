@@ -1,15 +1,18 @@
 'use client';
 
-import { use, useState } from 'react';
+import { use, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Plus, GripVertical, Edit, Trash2, Video, Clock } from 'lucide-react';
+import { ArrowLeft, Plus, GripVertical, Edit, Trash2, Video, Clock, HelpCircle, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Badge } from '@/components/ui/Badge';
 import { VideoUpload } from '@/components/courses/VideoUpload';
 import { useCourse } from '@/lib/hooks/useCourses';
 import { Chapter } from '@/types/course';
+import { ChapterQuiz } from '@/types/quiz';
 import * as courseService from '@/lib/services/courses';
+import * as quizService from '@/lib/services/quizzes';
 import { formatTime } from '@/lib/utils/formatters';
 
 export default function ChaptersPage({ params }: { params: Promise<{ courseId: string }> }) {
@@ -17,6 +20,19 @@ export default function ChaptersPage({ params }: { params: Promise<{ courseId: s
   const { course, loading, error, refetch } = useCourse(courseId);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingChapter, setEditingChapter] = useState<Chapter | null>(null);
+  const [chapterQuizzes, setChapterQuizzes] = useState<Map<string, ChapterQuiz>>(new Map());
+
+  // Fetch quizzes for all chapters
+  useEffect(() => {
+    const fetchQuizzes = async () => {
+      if (!course) return;
+      const quizzes = await quizService.getCourseQuizzes(courseId);
+      const quizMap = new Map<string, ChapterQuiz>();
+      quizzes.forEach((quiz) => quizMap.set(quiz.chapterId, quiz));
+      setChapterQuizzes(quizMap);
+    };
+    fetchQuizzes();
+  }, [courseId, course]);
 
   if (loading) {
     return (
@@ -117,6 +133,8 @@ export default function ChaptersPage({ params }: { params: Promise<{ courseId: s
             <ChapterItem
               key={chapter.id}
               chapter={chapter}
+              courseId={courseId}
+              quiz={chapterQuizzes.get(chapter.id)}
               index={index}
               onEdit={() => setEditingChapter(chapter)}
               onDelete={async () => {
@@ -135,11 +153,15 @@ export default function ChaptersPage({ params }: { params: Promise<{ courseId: s
 
 function ChapterItem({
   chapter,
+  courseId,
+  quiz,
   index,
   onEdit,
   onDelete,
 }: {
   chapter: Chapter;
+  courseId: string;
+  quiz?: ChapterQuiz;
   index: number;
   onEdit: () => void;
   onDelete: () => void;
@@ -174,17 +196,38 @@ function ChapterItem({
                 No video
               </span>
             )}
+            {quiz ? (
+              <Badge variant="info" size="sm" className="flex items-center gap-1">
+                <CheckCircle className="h-3 w-3" />
+                {quiz.questions.length} quiz questions
+              </Badge>
+            ) : (
+              <Badge variant="default" size="sm" className="flex items-center gap-1 text-gray-500">
+                <HelpCircle className="h-3 w-3" />
+                No quiz
+              </Badge>
+            )}
           </div>
           <div className="flex items-center space-x-2">
+            <Link href={`/instructor/courses/${courseId}/chapters/${chapter.id}/quiz`}>
+              <button
+                className="p-2 rounded-lg hover:bg-gray-100 text-purple-600"
+                title="Edit Quiz"
+              >
+                <HelpCircle className="h-4 w-4" />
+              </button>
+            </Link>
             <button
               onClick={onEdit}
               className="p-2 rounded-lg hover:bg-gray-100 text-gray-500"
+              title="Edit Chapter"
             >
               <Edit className="h-4 w-4" />
             </button>
             <button
               onClick={onDelete}
               className="p-2 rounded-lg hover:bg-gray-100 text-red-500"
+              title="Delete Chapter"
             >
               <Trash2 className="h-4 w-4" />
             </button>

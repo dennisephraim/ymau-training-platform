@@ -5,3 +5,4 @@ export * from './progress';
 export * from './certificate';
 export * from './task';
 export * from './resource';
+export * from './quiz';

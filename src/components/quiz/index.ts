@@ -1,0 +1,1 @@
+export { ChapterQuizPlayer } from './ChapterQuizPlayer';

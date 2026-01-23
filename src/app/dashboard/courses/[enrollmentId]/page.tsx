@@ -11,20 +11,25 @@ import {
   ChevronRight,
   Award,
   PartyPopper,
+  HelpCircle,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
 import { useAuth } from '@/components/auth/AuthContext';
 import { VideoPlayer } from '@/components/video';
+import { ChapterQuizPlayer } from '@/components/quiz';
 import { useVideoProgress } from '@/lib/hooks/useVideoProgress';
 import { Enrollment } from '@/types/enrollment';
 import { Course, Chapter } from '@/types/course';
 import { ChapterProgress, CourseProgress } from '@/types/progress';
 import { Certificate } from '@/types/certificate';
+import { ChapterQuiz, QuizProgress } from '@/types/quiz';
 import * as enrollmentService from '@/lib/services/enrollments';
 import * as courseService from '@/lib/services/courses';
 import * as progressService from '@/lib/services/progress';
 import * as certificateService from '@/lib/services/certificates';
+import * as quizService from '@/lib/services/quizzes';
 import { formatDuration } from '@/lib/utils/formatters';
 
 export default function CourseViewerPage({
@@ -44,6 +49,10 @@ export default function CourseViewerPage({
   const [certificate, setCertificate] = useState<Certificate | null>(null);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [isGeneratingCertificate, setIsGeneratingCertificate] = useState(false);
+  
+  // Quiz state
+  const [chapterQuizzes, setChapterQuizzes] = useState<Map<string, ChapterQuiz>>(new Map());
+  const [quizProgress, setQuizProgress] = useState<Map<string, QuizProgress>>(new Map());
 
   // Fetch course data
   const fetchData = useCallback(async () => {
@@ -86,6 +95,20 @@ export default function CourseViewerPage({
       );
       setCourseProgress(progress);
 
+      // Fetch quizzes for all chapters
+      const quizzes = await quizService.getCourseQuizzes(enrollmentData.courseId);
+      const quizMap = new Map<string, ChapterQuiz>();
+      quizzes.forEach((quiz) => quizMap.set(quiz.chapterId, quiz));
+      setChapterQuizzes(quizMap);
+
+      // Fetch quiz progress for all chapters with quizzes
+      const quizProgressMap = new Map<string, QuizProgress>();
+      for (const quiz of quizzes) {
+        const qProgress = await quizService.getQuizProgress(enrollmentId, quiz.chapterId);
+        quizProgressMap.set(quiz.chapterId, qProgress);
+      }
+      setQuizProgress(quizProgressMap);
+
       // Check for existing certificate
       const existingCert = await certificateService.getCertificateByEnrollment(enrollmentId);
       setCertificate(existingCert);
@@ -96,7 +119,12 @@ export default function CourseViewerPage({
           const chapterProgress = progress.chapterProgress.find(
             (p) => p.chapterId === ch.id
           );
-          return !chapterProgress?.isCompleted;
+          // Chapter is incomplete if video not done OR quiz not passed
+          const videoComplete = chapterProgress?.isCompleted || false;
+          const quiz = quizMap.get(ch.id);
+          const qProgress = quizProgressMap.get(ch.id);
+          const quizComplete = !quiz || !quiz.settings.enabled || qProgress?.passed;
+          return !videoComplete || !quizComplete;
         });
         setActiveChapterId(incompleteChapter?.id || chaptersData[0].id);
       }
@@ -122,13 +150,60 @@ export default function CourseViewerPage({
     );
     setCourseProgress(progress);
 
-    // Check if course is now complete and no certificate exists yet
-    const isComplete = await progressService.isCourseCompleted(enrollmentId, enrollment.courseId);
+    // Check if course is now complete (including quizzes) and no certificate exists yet
+    const allChaptersComplete = await checkAllChaptersComplete(progress);
 
-    if (isComplete && !certificate) {
+    if (allChaptersComplete && !certificate) {
       setShowCompletionModal(true);
     }
-  }, [enrollmentId, enrollment, course, user, certificate]);
+  }, [enrollmentId, enrollment, course, user, certificate, chapterQuizzes, quizProgress]);
+
+  // Check if all chapters are complete (video + quiz)
+  // Optional updatedQuizProgress param allows passing freshly fetched progress
+  const checkAllChaptersComplete = useCallback(async (
+    progress: CourseProgress,
+    updatedQuizProgress?: Map<string, QuizProgress>
+  ) => {
+    const currentQuizProgress = updatedQuizProgress || quizProgress;
+    
+    for (const chapter of chapters) {
+      const chapterProgress = progress.chapterProgress.find(
+        (p) => p.chapterId === chapter.id
+      );
+      const videoComplete = chapterProgress?.isCompleted || false;
+      
+      // Check quiz completion
+      const quiz = chapterQuizzes.get(chapter.id);
+      const qProgress = currentQuizProgress.get(chapter.id);
+      const quizComplete = !quiz || !quiz.settings.enabled || qProgress?.passed;
+      
+      if (!videoComplete || !quizComplete) {
+        return false;
+      }
+    }
+    return chapters.length > 0;
+  }, [chapters, chapterQuizzes, quizProgress]);
+
+  // Handle quiz completion
+  const handleQuizComplete = useCallback(async (chapterId: string, passed: boolean) => {
+    // Refresh quiz progress
+    const qProgress = await quizService.getQuizProgress(enrollmentId, chapterId);
+    
+    // Create updated quiz progress map with fresh data
+    const updatedQuizProgressMap = new Map(quizProgress);
+    updatedQuizProgressMap.set(chapterId, qProgress);
+    
+    // Update state
+    setQuizProgress(updatedQuizProgressMap);
+
+    if (passed && courseProgress) {
+      // Check if course is now complete using the updated map (not stale state)
+      const allComplete = await checkAllChaptersComplete(courseProgress, updatedQuizProgressMap);
+      if (allComplete && !certificate) {
+        setShowCompletionModal(true);
+      }
+    }
+  }, [enrollmentId, courseProgress, certificate, checkAllChaptersComplete, quizProgress]);
 
   // Generate certificate when course is completed
   const handleGenerateCertificate = useCallback(async () => {
@@ -162,12 +237,63 @@ export default function CourseViewerPage({
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="h-4 bg-gray-200 rounded w-24 animate-pulse" />
-        <div className="h-8 bg-gray-200 rounded w-64 animate-pulse" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 h-96 bg-gray-200 rounded animate-pulse" />
-          <div className="h-96 bg-gray-200 rounded animate-pulse" />
+      <div className="space-y-0">
+        {/* Skeleton Header */}
+        <div className="sticky -top-6 z-10 -mx-6 -mt-6 mb-6">
+          <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-gray-200 rounded-lg animate-pulse" />
+                  <div>
+                    <div className="h-6 bg-gray-200 rounded w-64 animate-pulse" />
+                    <div className="flex items-center gap-3 mt-2">
+                      <div className="h-4 bg-gray-200 rounded w-20 animate-pulse" />
+                      <div className="h-4 bg-gray-200 rounded w-16 animate-pulse" />
+                      <div className="h-4 bg-gray-200 rounded w-24 animate-pulse" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="h-1.5 bg-gray-200 rounded-full mt-3 animate-pulse" />
+          </div>
+        </div>
+
+        {/* Skeleton Content */}
+        <div className="lg:mr-[340px]">
+          <div className="space-y-6">
+            {/* Video player skeleton */}
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div className="aspect-video bg-gray-200 animate-pulse" />
+              <div className="p-4 space-y-2">
+                <div className="h-4 bg-gray-200 rounded w-32 animate-pulse" />
+                <div className="h-3 bg-gray-200 rounded w-48 animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Skeleton Chapters sidebar */}
+        <div className="hidden lg:block lg:fixed lg:right-0 lg:top-[140px] lg:bottom-0 lg:w-[340px] lg:bg-gray-50 lg:border-l lg:border-gray-200">
+          <div className="h-full flex flex-col p-4 pt-2">
+            <div className="bg-white rounded-xl border border-gray-200 flex-1 flex flex-col overflow-hidden">
+              <div className="p-4 border-b border-gray-200">
+                <div className="h-5 bg-gray-200 rounded w-20 animate-pulse" />
+              </div>
+              <div className="p-2 space-y-2">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center gap-3 p-3">
+                    <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse" />
+                      <div className="h-3 bg-gray-200 rounded w-1/2 animate-pulse" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -200,63 +326,59 @@ export default function CourseViewerPage({
   const activeChapter = chapters.find((ch) => ch.id === activeChapterId);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <Link
-          href="/dashboard/courses"
-          className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
-        >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Back to My Courses
-        </Link>
-        <h1 className="text-2xl font-bold text-gray-900 mt-2">{course.title}</h1>
-        <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
-          <span>{chapters.length} chapters</span>
-          <span>|</span>
-          <span>{formatDuration(course.totalDurationSeconds)} total</span>
-          <span>|</span>
-          <span className="text-blue-600 font-medium">
-            {(courseProgress?.overallPercentage || 0).toFixed(0)}% complete
-          </span>
-        </div>
-      </div>
-
-      {/* Course progress bar */}
-      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-        <div
-          className="h-full bg-blue-600 transition-all duration-300"
-          style={{ width: `${courseProgress?.overallPercentage || 0}%` }}
-        />
-      </div>
-
-      {/* Certificate Banner - shown when certificate exists */}
-      {certificate && (
-        <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
-          <CardContent className="py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-green-100 rounded-full">
-                  <Award className="h-6 w-6 text-green-600" />
-                </div>
+    <div className="space-y-0">
+      {/* Sticky Header */}
+      <div className="sticky -top-6 z-10 -mx-6 -mt-6 mb-6">
+        <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-3">
+                <Link href="/dashboard/courses" title="Back to My Courses">
+                  <Button variant="ghost" size="icon" className="shrink-0">
+                    <ArrowLeft className="h-5 w-5" />
+                  </Button>
+                </Link>
                 <div>
-                  <h3 className="font-medium text-green-800">
-                    Course Completed!
-                  </h3>
-                  <p className="text-sm text-green-600">
-                    Your certificate is ready to download
-                  </p>
+                  <h1 className="text-xl font-bold text-gray-900">{course.title}</h1>
+                  <div className="flex items-center space-x-3 mt-0.5 text-sm text-gray-500">
+                    <span>{chapters.length} chapters</span>
+                    <span>•</span>
+                    <span>{formatDuration(course.totalDurationSeconds)} total</span>
+                    <span>•</span>
+                    <span className="text-ymau-dark-red font-medium">
+                      {(courseProgress?.overallPercentage || 0).toFixed(0)}% complete
+                    </span>
+                  </div>
                 </div>
               </div>
-              <Link href="/dashboard/certificates">
-                <Button className="bg-green-600 hover:bg-green-700">
-                  View Certificate
-                </Button>
-              </Link>
             </div>
-          </CardContent>
-        </Card>
-      )}
+            
+            {/* Certificate Badge - shown when certificate exists */}
+            {certificate && (
+              <div className="flex items-center gap-3 bg-green-50/90 backdrop-blur-sm border border-green-200 rounded-xl px-4 py-2">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <span className="text-sm font-medium text-green-700">Completed</span>
+                </div>
+                <Link href="/dashboard/certificates">
+                  <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                    <Award className="h-4 w-4 mr-1" />
+                    View Certificate
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Course progress bar */}
+          <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden mt-3">
+            <div
+              className="h-full bg-ymau-dark-red transition-all duration-300"
+              style={{ width: `${courseProgress?.overallPercentage || 0}%` }}
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Completion Modal */}
       {showCompletionModal && (
@@ -306,29 +428,79 @@ export default function CourseViewerPage({
       )}
 
       {/* Main content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Video player */}
-        <div className="lg:col-span-2">
+      <div className="lg:mr-[340px]">
+        {/* Video player and Quiz */}
+        <div className="space-y-6">
           {activeChapter ? (
-            <ChapterVideoPlayer
-              chapter={activeChapter}
-              enrollmentId={enrollmentId}
-              courseId={course.id}
-              studentId={user!.id}
-              progress={courseProgress?.chapterProgress.find(
-                (p) => p.chapterId === activeChapter.id
-              )}
-              onProgressUpdate={handleProgressUpdate}
-              onComplete={() => {
-                // Move to next chapter
-                const currentIndex = chapters.findIndex(
-                  (ch) => ch.id === activeChapter.id
+            <>
+              <ChapterVideoPlayer
+                chapter={activeChapter}
+                enrollmentId={enrollmentId}
+                courseId={course.id}
+                studentId={user!.id}
+                progress={courseProgress?.chapterProgress.find(
+                  (p) => p.chapterId === activeChapter.id
+                )}
+                onProgressUpdate={handleProgressUpdate}
+                onComplete={() => {
+                  // Don't auto-advance if there's a quiz to complete
+                  const quiz = chapterQuizzes.get(activeChapter.id);
+                  const qProgress = quizProgress.get(activeChapter.id);
+                  if (quiz && quiz.settings.enabled && !qProgress?.passed) {
+                    // Stay on this chapter - quiz needs to be completed
+                    return;
+                  }
+                  // Move to next chapter
+                  const currentIndex = chapters.findIndex(
+                    (ch) => ch.id === activeChapter.id
+                  );
+                  if (currentIndex < chapters.length - 1) {
+                    setActiveChapterId(chapters[currentIndex + 1].id);
+                  }
+                }}
+              />
+              
+              {/* Chapter Quiz - show if video is completed and quiz exists */}
+              {(() => {
+                const chapterProgress = courseProgress?.chapterProgress.find(
+                  (p) => p.chapterId === activeChapter.id
                 );
-                if (currentIndex < chapters.length - 1) {
-                  setActiveChapterId(chapters[currentIndex + 1].id);
+                const videoComplete = chapterProgress?.isCompleted || false;
+                const quiz = chapterQuizzes.get(activeChapter.id);
+                const qProgress = quizProgress.get(activeChapter.id);
+                
+                if (quiz && quiz.settings.enabled && videoComplete) {
+                  return (
+                    <ChapterQuizPlayer
+                      quiz={quiz}
+                      enrollmentId={enrollmentId}
+                      studentId={user!.id}
+                      quizProgress={qProgress || null}
+                      onComplete={(passed) => handleQuizComplete(activeChapter.id, passed)}
+                    />
+                  );
                 }
-              }}
-            />
+                
+                // Show quiz preview if exists but video not complete
+                if (quiz && quiz.settings.enabled && !videoComplete) {
+                  return (
+                    <Card className="border-gray-200 bg-gray-50">
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-3 text-gray-500">
+                          <HelpCircle className="h-5 w-5" />
+                          <div>
+                            <p className="font-medium">Chapter Quiz Available</p>
+                            <p className="text-sm">Complete the video to unlock the quiz</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                }
+                
+                return null;
+              })()}
+            </>
           ) : (
             <Card>
               <CardContent className="py-12 text-center">
@@ -337,20 +509,22 @@ export default function CourseViewerPage({
             </Card>
           )}
         </div>
+      </div>
 
-        {/* Chapter list */}
-        <div>
-          <Card>
-            <CardHeader>
+      {/* Chapter list - fixed on right side like sidebar */}
+      <div className="hidden lg:block lg:fixed lg:right-8 lg:top-[180px] lg:bottom-0 lg:w-[340px]">
+        <div className="h-full flex flex-col pb-6 p-4 pt-2">
+          <Card className="flex-1 flex flex-col overflow-hidden">
+            <CardHeader className="py-3 flex-shrink-0">
               <CardTitle className="text-lg">Chapters</CardTitle>
             </CardHeader>
-            <CardContent className="p-0">
+            <CardContent className="p-0 flex-1 overflow-y-auto">
               <div className="divide-y divide-gray-200">
                 {chapters.map((chapter, index) => {
                   const chapterProgress = courseProgress?.chapterProgress.find(
                     (p) => p.chapterId === chapter.id
                   );
-                  const isCompleted = chapterProgress?.isCompleted || false;
+                  const videoComplete = chapterProgress?.isCompleted || false;
                   const isActive = chapter.id === activeChapterId;
                   const percentage = chapterProgress
                     ? progressService.calculateWatchedPercentage(
@@ -359,6 +533,15 @@ export default function CourseViewerPage({
                       )
                     : 0;
 
+                  // Check quiz status
+                  const quiz = chapterQuizzes.get(chapter.id);
+                  const qProgress = quizProgress.get(chapter.id);
+                  const hasQuiz = quiz && quiz.settings.enabled;
+                  const quizPassed = qProgress?.passed || false;
+                  
+                  // Chapter is fully complete only if video done AND quiz passed (if exists)
+                  const isFullyComplete = videoComplete && (!hasQuiz || quizPassed);
+
                   // Check if previous chapter is completed (for locking)
                   const previousChapter = index > 0 ? chapters[index - 1] : null;
                   const previousProgress = previousChapter
@@ -366,17 +549,23 @@ export default function CourseViewerPage({
                         (p) => p.chapterId === previousChapter.id
                       )
                     : null;
-                  const isLocked =
-                    index > 0 && !previousProgress?.isCompleted && !isCompleted;
+                  const prevQuiz = previousChapter ? chapterQuizzes.get(previousChapter.id) : null;
+                  const prevQProgress = previousChapter ? quizProgress.get(previousChapter.id) : null;
+                  const prevHasQuiz = prevQuiz && prevQuiz.settings.enabled;
+                  const prevQuizPassed = prevQProgress?.passed || false;
+                  const prevFullyComplete = previousProgress?.isCompleted && (!prevHasQuiz || prevQuizPassed);
+                  
+                  const isLocked = index > 0 && !prevFullyComplete && !isFullyComplete;
+                  const isLast = index === chapters.length - 1;
 
                   return (
                     <button
                       key={chapter.id}
                       onClick={() => !isLocked && setActiveChapterId(chapter.id)}
                       disabled={isLocked}
-                      className={`w-full p-4 text-left transition-colors ${
+                      className={`w-full p-4 text-left transition-colors ${isLast ? 'rounded-b-xl' : ''} ${
                         isActive
-                          ? 'bg-blue-50 border-l-4 border-blue-600'
+                          ? 'bg-ymau-dark-red/5 border-l-4 border-ymau-dark-red'
                           : isLocked
                           ? 'bg-gray-50 cursor-not-allowed'
                           : 'hover:bg-gray-50'
@@ -386,14 +575,14 @@ export default function CourseViewerPage({
                         <div className="flex items-center space-x-3">
                           <div
                             className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                              isCompleted
+                              isFullyComplete
                                 ? 'bg-green-100'
                                 : isLocked
                                 ? 'bg-gray-200'
                                 : 'bg-gray-100'
                             }`}
                           >
-                            {isCompleted ? (
+                            {isFullyComplete ? (
                               <CheckCircle className="h-4 w-4 text-green-600" />
                             ) : isLocked ? (
                               <Lock className="h-4 w-4 text-gray-400" />
@@ -406,7 +595,7 @@ export default function CourseViewerPage({
                           <div className="min-w-0 flex-1">
                             <p
                               className={`text-sm font-medium ${
-                                isActive ? 'text-blue-700' : 'text-gray-900'
+                                isActive ? 'text-ymau-dark-red' : 'text-gray-900'
                               } ${isLocked ? 'text-gray-400' : ''} truncate`}
                             >
                               {chapter.title}
@@ -416,12 +605,26 @@ export default function CourseViewerPage({
                               <span className="text-xs text-gray-500">
                                 {formatDuration(chapter.durationSeconds)}
                               </span>
-                              {!isCompleted && percentage > 0 && (
+                              {!videoComplete && percentage > 0 && (
                                 <>
                                   <span className="text-gray-400">|</span>
-                                  <span className="text-xs text-blue-600">
+                                  <span className="text-xs text-ymau-dark-red">
                                     {percentage.toFixed(0)}%
                                   </span>
+                                </>
+                              )}
+                              {hasQuiz && (
+                                <>
+                                  <span className="text-gray-400">|</span>
+                                  {quizPassed ? (
+                                    <Badge variant="success" size="sm" className="text-[10px] py-0 px-1">
+                                      Quiz ✓
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="default" size="sm" className="text-[10px] py-0 px-1 text-gray-500">
+                                      Quiz
+                                    </Badge>
+                                  )}
                                 </>
                               )}
                             </div>
@@ -433,10 +636,10 @@ export default function CourseViewerPage({
                       </div>
 
                       {/* Chapter progress bar */}
-                      {!isCompleted && percentage > 0 && (
+                      {!videoComplete && percentage > 0 && (
                         <div className="mt-2 ml-11 h-1 bg-gray-200 rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-blue-600"
+                            className="h-full bg-ymau-dark-red"
                             style={{ width: `${percentage}%` }}
                           />
                         </div>
