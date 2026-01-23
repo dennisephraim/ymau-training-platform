@@ -776,7 +776,7 @@ function ChapterVideoPlayer({
   if (chapter.contentType === 'text') {
     return (
       <Card>
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-1">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-blue-600" />
@@ -794,9 +794,9 @@ function ChapterVideoPlayer({
           )}
         </CardHeader>
         <CardContent>
-          {/* Text content display area - compact height */}
-          <div className="h-[370px] bg-gray-50 rounded-lg border border-gray-200 overflow-auto p-6">
-            <div className="prose prose-sm max-w-none">
+          {/* Text content display area - viewport-based height that scales */}
+          <div className="h-[55vh] max-h-125 bg-ymau-light-indigo/20 rounded-lg border border-gray-200 overflow-auto">
+            <div className="p-4 prose prose-sm max-w-none">
               {chapter.textContent ? (
                 <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
                   {chapter.textContent}
@@ -808,7 +808,7 @@ function ChapterVideoPlayer({
           </div>
 
           {/* Mark as complete button */}
-          <div className="mt-4 flex items-center justify-between">
+          <div className="mt-2 flex items-center justify-between">
             <span className="text-sm text-gray-500">
               Read through the content above, then mark as complete to continue.
             </span>
