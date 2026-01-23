@@ -70,12 +70,10 @@ export default function NewCoursePage() {
   return (
     <div className="max-w-2xl mx-auto space-y-8 animate-fade-in">
       {/* Back Button */}
-      <Link
-        href="/instructor/courses"
-        className="inline-flex items-center text-sm text-gray-500 hover:text-ymau-dark-red transition-colors"
-      >
-        <ArrowLeft className="h-4 w-4 mr-1" />
-        Back to Courses
+      <Link href="/instructor/courses">
+        <Button variant="ghost" size="icon">
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
       </Link>
 
       {/* Header */}

@@ -188,9 +188,8 @@ export default function EditTaskPage() {
       <div className="flex flex-col items-center justify-center py-12">
         <p className="text-gray-500 mb-4">{error}</p>
         <Link href="/instructor/tasks">
-          <Button variant="outline">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Tasks
+          <Button variant="ghost" size="icon">
+            <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
       </div>

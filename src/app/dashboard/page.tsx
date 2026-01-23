@@ -366,31 +366,31 @@ export default function DashboardPage() {
       {(user?.role === 'instructor' || user?.role === 'admin') && (
         <div className="grid gap-6 md:grid-cols-2">
           {/* Quick Actions */}
-          <Card className="bg-gradient-to-br from-ymau-dark-red to-ymau-dark-red/90 text-white border-0">
+          <Card className="bg-gradient-to-br from-ymau-light-indigo/30 to-ymau-dark-red/10 border-ymau-dark-red/20">
             <CardContent className="p-5">
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-white/20 rounded-lg">
-                  <Sparkles className="h-5 w-5" />
+                <div className="p-2 bg-ymau-dark-red/10 rounded-lg">
+                  <Sparkles className="h-5 w-5 text-ymau-dark-red" />
                 </div>
-                <h3 className="font-semibold">Quick Actions</h3>
+                <h3 className="font-semibold text-gray-900">Quick Actions</h3>
               </div>
               <div className="space-y-2">
                 <Link href="/instructor/courses/new" className="block">
-                  <button className="w-full flex items-center gap-3 px-3 py-2.5 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-left">
-                    <Plus className="h-4 w-4" />
-                    <span className="text-sm">Create Course</span>
+                  <button className="w-full flex items-center gap-3 px-3 py-2.5 bg-ymau-dark-red/5 hover:bg-ymau-dark-red/10 border border-ymau-dark-red/10 rounded-lg transition-colors text-left">
+                    <Plus className="h-4 w-4 text-ymau-dark-red" />
+                    <span className="text-sm text-gray-700">Create Course</span>
                   </button>
                 </Link>
                 <Link href="/instructor/tasks/new" className="block">
-                  <button className="w-full flex items-center gap-3 px-3 py-2.5 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-left">
-                    <ClipboardList className="h-4 w-4" />
-                    <span className="text-sm">Create Task</span>
+                  <button className="w-full flex items-center gap-3 px-3 py-2.5 bg-ymau-dark-red/5 hover:bg-ymau-dark-red/10 border border-ymau-dark-red/10 rounded-lg transition-colors text-left">
+                    <ClipboardList className="h-4 w-4 text-ymau-dark-red" />
+                    <span className="text-sm text-gray-700">Create Task</span>
                   </button>
                 </Link>
                 <Link href="/instructor/resources" className="block">
-                  <button className="w-full flex items-center gap-3 px-3 py-2.5 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-left">
-                    <FileText className="h-4 w-4" />
-                    <span className="text-sm">Add Resource</span>
+                  <button className="w-full flex items-center gap-3 px-3 py-2.5 bg-ymau-dark-red/5 hover:bg-ymau-dark-red/10 border border-ymau-dark-red/10 rounded-lg transition-colors text-left">
+                    <FileText className="h-4 w-4 text-ymau-dark-red" />
+                    <span className="text-sm text-gray-700">Add Resource</span>
                   </button>
                 </Link>
               </div>

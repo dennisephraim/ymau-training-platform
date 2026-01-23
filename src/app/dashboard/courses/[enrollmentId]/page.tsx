@@ -302,13 +302,14 @@ export default function CourseViewerPage({
   if (error || !enrollment || !course) {
     return (
       <div className="space-y-6">
-        <Link
-          href="/dashboard/courses"
-          className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
-        >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Back to My Courses
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link href="/dashboard/courses">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </Link>
+          <h1 className="text-2xl font-bold text-gray-900">Course Not Found</h1>
+        </div>
         <Card>
           <CardContent className="py-12">
             <div className="text-center">

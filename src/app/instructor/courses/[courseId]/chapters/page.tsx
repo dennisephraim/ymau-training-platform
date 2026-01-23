@@ -2,7 +2,7 @@
 
 import { use, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Plus, GripVertical, Edit, Trash2, Video, Clock, HelpCircle, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Plus, GripVertical, Edit, Trash2, Video, Clock, HelpCircle, CheckCircle, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -53,15 +53,13 @@ export default function ChaptersPage({ params }: { params: Promise<{ courseId: s
   if (error || !course) {
     return (
       <div className="space-y-6">
-        <div>
-          <Link
-            href="/instructor/courses"
-            className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Back to Courses
+        <div className="flex items-center gap-4">
+          <Link href="/instructor/courses">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900 mt-2">Course Not Found</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Course Not Found</h1>
         </div>
       </div>
     );
@@ -69,53 +67,62 @@ export default function ChaptersPage({ params }: { params: Promise<{ courseId: s
 
   return (
     <div className="space-y-6">
-      <div>
-        <Link
-          href="/instructor/courses"
-          className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
-        >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Back to Courses
+      <div className="flex items-start gap-4">
+        <Link href="/instructor/courses">
+          <Button variant="ghost" size="icon">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900 mt-2">{course.title}</h1>
-        <p className="text-gray-600 mt-1">Manage course chapters and videos</p>
+        <div className="flex-1">
+          <h1 className="text-2xl font-bold text-gray-900">{course.title}</h1>
+          <p className="text-gray-600 mt-1">Manage course chapters and videos</p>
+        </div>
       </div>
 
       <div className="flex items-center justify-between">
         <div className="text-sm text-gray-500">
           {course.chapters.length} {course.chapters.length === 1 ? 'chapter' : 'chapters'}
         </div>
-        <Button onClick={() => setShowAddForm(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Chapter
-        </Button>
+        {!showAddForm && (
+          <Button onClick={() => setShowAddForm(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Chapter
+          </Button>
+        )}
       </div>
 
+      {/* Collapsible Add Chapter Form */}
       {showAddForm && (
         <ChapterForm
           courseId={courseId}
           order={course.chapters.length}
           onClose={() => setShowAddForm(false)}
-          onSaved={() => {
+          onSaved={(newChapterId) => {
             setShowAddForm(false);
             refetch();
           }}
         />
       )}
 
+      {/* Edit Chapter Modal */}
       {editingChapter && (
-        <ChapterForm
-          courseId={courseId}
-          chapter={editingChapter}
-          onClose={() => setEditingChapter(null)}
-          onSaved={() => {
-            setEditingChapter(null);
-            refetch();
-          }}
-        />
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/50" onClick={() => setEditingChapter(null)} />
+          <div className="relative z-10 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <ChapterForm
+              courseId={courseId}
+              chapter={editingChapter}
+              onClose={() => setEditingChapter(null)}
+              onSaved={() => {
+                setEditingChapter(null);
+                refetch();
+              }}
+            />
+          </div>
+        </div>
       )}
 
-      {course.chapters.length === 0 ? (
+      {course.chapters.length === 0 && !showAddForm ? (
         <Card>
           <CardContent className="py-12">
             <div className="text-center">
@@ -127,7 +134,7 @@ export default function ChaptersPage({ params }: { params: Promise<{ courseId: s
             </div>
           </CardContent>
         </Card>
-      ) : (
+      ) : course.chapters.length > 0 ? (
         <div className="space-y-2">
           {course.chapters.map((chapter, index) => (
             <ChapterItem
@@ -146,7 +153,7 @@ export default function ChaptersPage({ params }: { params: Promise<{ courseId: s
             />
           ))}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -249,7 +256,7 @@ function ChapterForm({
   chapter?: Chapter;
   order?: number;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (chapterId?: string) => void;
 }) {
   const [title, setTitle] = useState(chapter?.title || '');
   const [description, setDescription] = useState(chapter?.description || '');
@@ -345,7 +352,7 @@ function ChapterForm({
           description: description.trim(),
           durationSeconds: totalSeconds,
         });
-        onSaved();
+        onSaved(chapter.id);
       } else {
         // Create the chapter first
         const createdChapterId = await courseService.createChapter(courseId, {
@@ -376,7 +383,7 @@ function ChapterForm({
           }
           setUploadingVideo(false);
         }
-        onSaved();
+        onSaved(createdChapterId);
       }
     } catch (err) {
       console.error('Error saving chapter:', err);
@@ -388,17 +395,36 @@ function ChapterForm({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>{chapter ? 'Edit Chapter' : 'Add New Chapter'}</CardTitle>
-        <CardDescription>
-          {chapter ? 'Update chapter details' : 'Create a new chapter for this course'}
-        </CardDescription>
+      <CardHeader
+        className="cursor-pointer"
+        onClick={!loading && !uploadingVideo ? onClose : undefined}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Plus className="h-5 w-5 text-gray-500" />
+            <CardTitle className="text-lg">{chapter ? 'Edit Chapter' : 'Add New Chapter'}</CardTitle>
+          </div>
+          <ChevronUp className="h-5 w-5 text-gray-500" />
+        </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-0">
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
               {error}
+            </div>
+          )}
+
+          {/* Upload Progress Overlay */}
+          {uploadingVideo && (
+            <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
+              <div className="flex items-center gap-3">
+                <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
+                <div>
+                  <p className="text-sm font-medium text-blue-900">Uploading video...</p>
+                  <p className="text-xs text-blue-600">This may take a moment depending on the file size</p>
+                </div>
+              </div>
             </div>
           )}
 
@@ -408,6 +434,7 @@ function ChapterForm({
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g., Introduction to the African Union"
             required
+            disabled={uploadingVideo}
           />
 
           <div className="space-y-1">
@@ -417,34 +444,9 @@ function ChapterForm({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Brief description of this chapter..."
               rows={2}
-              className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              disabled={uploadingVideo}
+              className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
             />
-          </div>
-
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">Video Duration</label>
-            <div className="flex items-center space-x-2">
-              <input
-                type="number"
-                min="0"
-                value={durationMinutes}
-                onChange={(e) => setDurationMinutes(parseInt(e.target.value) || 0)}
-                className="w-20 rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-              <span className="text-gray-500">min</span>
-              <input
-                type="number"
-                min="0"
-                max="59"
-                value={durationSeconds}
-                onChange={(e) => setDurationSeconds(parseInt(e.target.value) || 0)}
-                className="w-20 rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-              <span className="text-gray-500">sec</span>
-            </div>
-            <p className="text-xs text-gray-500">
-              Enter the expected duration. This will be updated automatically when you upload a video.
-            </p>
           </div>
 
           {/* Video Upload Section - Only show when editing existing chapter */}
@@ -512,6 +514,52 @@ function ChapterForm({
               <p className="text-xs text-gray-500">
                 You can also add or change the video later by editing the chapter.
               </p>
+            </div>
+          )}
+
+          {/* Quiz Section - Only show when editing existing chapter */}
+          {chapter && (
+            <div className="space-y-2 pt-4 border-t border-gray-200">
+              <label className="block text-sm font-medium text-gray-700">Chapter Quiz</label>
+              <div className="flex items-center justify-between p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-100 rounded-lg">
+                    <HelpCircle className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Quiz Questions</p>
+                    <p className="text-xs text-gray-500">
+                      Add questions students must answer to complete this chapter
+                    </p>
+                  </div>
+                </div>
+                <Link href={`/instructor/courses/${courseId}/chapters/${chapter.id}/quiz`}>
+                  <Button type="button" variant="outline" size="sm" className="border-purple-300 text-purple-700 hover:bg-purple-100">
+                    <HelpCircle className="h-4 w-4 mr-1" />
+                    Edit Quiz
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* Quiz info for new chapters */}
+          {!chapter && (
+            <div className="space-y-2 pt-4 border-t border-gray-200">
+              <label className="block text-sm font-medium text-gray-700">Chapter Quiz</label>
+              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-gray-100 rounded-lg">
+                    <HelpCircle className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Quiz Available After Creation</p>
+                    <p className="text-xs text-gray-500">
+                      Save this chapter first, then you can add quiz questions by clicking "Edit Quiz"
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 

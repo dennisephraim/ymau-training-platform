@@ -206,9 +206,8 @@ export default function TaskDetailPage() {
         <h2 className="text-xl font-semibold text-gray-900 mb-2">Error</h2>
         <p className="text-gray-500 mb-4">{error}</p>
         <Link href="/dashboard/courses">
-          <Button variant="outline">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Activities
+          <Button variant="ghost" size="icon">
+            <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
       </div>

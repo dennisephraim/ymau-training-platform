@@ -113,12 +113,16 @@ export default function ChapterQuizPage({
     }
 
     // Validate settings
-    if (settings.questionsPerAttempt < 1) {
-      setError('Questions per attempt must be at least 1');
+    if (settings.questionsPerAttempt < 1 || settings.questionsPerAttempt === 0) {
+      setError('Questions per attempt is required and must be at least 1');
       return;
     }
     if (settings.questionsPerAttempt > questions.length && questions.length > 0) {
       setError(`Questions per attempt cannot exceed total questions (${questions.length})`);
+      return;
+    }
+    if (settings.passingScore < 0 || settings.passingScore === -1) {
+      setError('Passing score is required (0-100%)');
       return;
     }
 
@@ -279,13 +283,14 @@ export default function ChapterQuizPage({
   if (error && !chapter) {
     return (
       <div className="space-y-6">
-        <Link
-          href={`/instructor/courses/${courseId}/chapters`}
-          className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
-        >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Back to Chapters
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link href={`/instructor/courses/${courseId}/chapters`}>
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </Link>
+          <h1 className="text-2xl font-bold text-gray-900">Quiz Not Found</h1>
+        </div>
         <Card>
           <CardContent className="py-12 text-center">
             <AlertCircle className="h-12 w-12 mx-auto text-red-500 mb-4" />
@@ -299,20 +304,20 @@ export default function ChapterQuizPage({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <Link
-          href={`/instructor/courses/${courseId}/chapters`}
-          className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
-        >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Back to Chapters
+      <div className="flex items-start gap-4">
+        <Link href={`/instructor/courses/${courseId}/chapters`}>
+          <Button variant="ghost" size="icon">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900 mt-2">
-          Quiz for: {chapter?.title}
-        </h1>
-        <p className="text-gray-600 mt-1">
-          Create questions for the chapter quiz. Students will be given a random subset.
-        </p>
+        <div className="flex-1">
+          <h1 className="text-2xl font-bold text-gray-900">
+            Quiz for: {chapter?.title}
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Create questions for the chapter quiz. Students will be given a random subset.
+          </p>
+        </div>
       </div>
 
       {/* Error Message */}
@@ -354,15 +359,16 @@ export default function ChapterQuizPage({
                   type="number"
                   min="1"
                   max={questions.length || 100}
-                  value={settings.questionsPerAttempt}
+                  value={settings.questionsPerAttempt === 0 ? '' : settings.questionsPerAttempt}
                   onChange={(e) => {
-                    const value = parseInt(e.target.value);
+                    const value = e.target.value === '' ? 0 : parseInt(e.target.value);
                     setSettings({
                       ...settings,
-                      questionsPerAttempt: isNaN(value) ? 1 : Math.max(1, value),
+                      questionsPerAttempt: isNaN(value) ? 0 : value,
                     });
                   }}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  placeholder="Required"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 bg-white placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 />
                 <p className="text-xs text-gray-500">
                   How many questions each student gets (randomly sampled from {questions.length} in pool)
@@ -377,15 +383,20 @@ export default function ChapterQuizPage({
                   type="number"
                   min="0"
                   max="100"
-                  value={settings.passingScore}
+                  value={settings.passingScore === -1 ? '' : settings.passingScore}
                   onChange={(e) => {
-                    const value = parseInt(e.target.value);
-                    setSettings({
-                      ...settings,
-                      passingScore: isNaN(value) ? 0 : Math.min(100, Math.max(0, value)),
-                    });
+                    if (e.target.value === '') {
+                      setSettings({ ...settings, passingScore: -1 });
+                    } else {
+                      const value = parseInt(e.target.value);
+                      setSettings({
+                        ...settings,
+                        passingScore: isNaN(value) ? -1 : Math.min(100, Math.max(0, value)),
+                      });
+                    }
                   }}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  placeholder="Required"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 bg-white placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 />
                 <p className="text-xs text-gray-500">
                   Minimum score to pass (0-100%)
