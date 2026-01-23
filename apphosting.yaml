@@ -9,50 +9,45 @@ runConfig:
 
 # Environment variables and secrets.
 env:
-  # Firebase Client Configuration (public - exposed to browser)
+  # Firebase Client Configuration (from Google Secret Manager)
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
-    value: AIzaSyAodqhIgubLOEsySrPjVTCAfOwasxf2kzc
+    secret: firebase-api-key
     availability:
       - BUILD
       - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-    value: ymau-delegate-hub.firebaseapp.com
+    secret: firebase-auth-domain
     availability:
       - BUILD
       - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    value: ymau-delegate-hub
+    secret: firebase-project-id
     availability:
       - BUILD
       - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-    value: ymau-delegate-hub.firebasestorage.app
+    secret: firebase-storage-bucket
     availability:
       - BUILD
       - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-    value: "646847187741"
+    secret: firebase-messaging-sender-id
     availability:
       - BUILD
       - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_APP_ID
-    value: 1:646847187741:web:f2cb4fd3ef6cb7642caff4
+    secret: firebase-app-id
     availability:
       - BUILD
       - RUNTIME
 
   - variable: NEXT_PUBLIC_APP_URL
-    value: https://ymau-delegate-hub.web.app
+    secret: app-url
     availability:
       - BUILD
       - RUNTIME
-
-  # Server-side secrets (reference from Google Secret Manager)
-  # Uncomment and create these secrets if you add server-side API keys:
-  # - variable: FIREBASE_ADMIN_SDK_KEY
-  #   secret: firebase-admin-sdk-key
