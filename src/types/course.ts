@@ -43,9 +43,11 @@ export interface Chapter {
   title: string;
   description: string;
   order: number;
+  contentType: 'video' | 'text'; // Type of chapter content
   videoUrl: string | null;
   videoPath: string | null; // Storage path for generating signed URLs
-  durationSeconds: number;
+  textContent: string | null; // Rich text content for text chapters
+  durationSeconds: number; // For video chapters; estimated read time for text
   thumbnailUrl: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -55,8 +57,10 @@ export interface ChapterDocument {
   title: string;
   description: string;
   order: number;
+  contentType: 'video' | 'text';
   videoUrl: string | null;
   videoPath: string | null;
+  textContent: string | null;
   durationSeconds: number;
   thumbnailUrl: string | null;
   createdAt: Date;

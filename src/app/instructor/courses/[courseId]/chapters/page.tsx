@@ -2,7 +2,7 @@
 
 import { use, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Plus, GripVertical, Edit, Trash2, Video, Clock, HelpCircle, CheckCircle, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, GripVertical, Edit, Trash2, Video, Clock, HelpCircle, CheckCircle, ChevronDown, ChevronUp, Loader2, FileText } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -194,7 +194,12 @@ function ChapterItem({
               <Clock className="h-4 w-4 mr-1" />
               {formatTime(chapter.durationSeconds)}
             </div>
-            {chapter.videoUrl ? (
+            {chapter.contentType === 'text' ? (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                <FileText className="h-3 w-3 mr-1" />
+                Text content
+              </span>
+            ) : chapter.videoUrl ? (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                 Video uploaded
               </span>
@@ -260,6 +265,8 @@ function ChapterForm({
 }) {
   const [title, setTitle] = useState(chapter?.title || '');
   const [description, setDescription] = useState(chapter?.description || '');
+  const [contentType, setContentType] = useState<'video' | 'text'>(chapter?.contentType || 'video');
+  const [textContent, setTextContent] = useState(chapter?.textContent || '');
   const [durationMinutes, setDurationMinutes] = useState(
     chapter ? Math.floor(chapter.durationSeconds / 60) : 0
   );
@@ -350,6 +357,8 @@ function ChapterForm({
         await courseService.updateChapter(courseId, chapter.id, {
           title: title.trim(),
           description: description.trim(),
+          contentType,
+          textContent: contentType === 'text' ? textContent : null,
           durationSeconds: totalSeconds,
         });
         onSaved(chapter.id);
@@ -359,8 +368,10 @@ function ChapterForm({
           title: title.trim(),
           description: description.trim(),
           order: order ?? 0,
+          contentType,
           videoUrl: null,
           videoPath: null,
+          textContent: contentType === 'text' ? textContent : null,
           durationSeconds: totalSeconds,
           thumbnailUrl: null,
         });
@@ -449,8 +460,63 @@ function ChapterForm({
             />
           </div>
 
+          {/* Content Type Selector */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">Content Type</label>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="contentType"
+                  value="video"
+                  checked={contentType === 'video'}
+                  onChange={() => setContentType('video')}
+                  disabled={uploadingVideo}
+                  className="h-4 w-4 text-ymau-dark-red focus:ring-ymau-dark-red border-gray-300"
+                />
+                <span className="flex items-center gap-1 text-sm text-gray-700">
+                  <Video className="h-4 w-4" />
+                  Video
+                </span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="contentType"
+                  value="text"
+                  checked={contentType === 'text'}
+                  onChange={() => setContentType('text')}
+                  disabled={uploadingVideo}
+                  className="h-4 w-4 text-ymau-dark-red focus:ring-ymau-dark-red border-gray-300"
+                />
+                <span className="flex items-center gap-1 text-sm text-gray-700">
+                  <FileText className="h-4 w-4" />
+                  Text
+                </span>
+              </label>
+            </div>
+          </div>
+
+          {/* Text Content Section */}
+          {contentType === 'text' && (
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700">Chapter Content</label>
+              <textarea
+                value={textContent}
+                onChange={(e) => setTextContent(e.target.value)}
+                placeholder="Enter the chapter content here. You can use this for reading materials, instructions, or any text-based learning content..."
+                rows={10}
+                disabled={uploadingVideo}
+                className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 font-mono text-sm"
+              />
+              <p className="text-xs text-gray-500">
+                Tip: Students will need to scroll through and read this content before proceeding. Make it informative!
+              </p>
+            </div>
+          )}
+
           {/* Video Upload Section - Only show when editing existing chapter */}
-          {chapter && (
+          {chapter && contentType === 'video' && (
             <div className="space-y-1">
               <label className="block text-sm font-medium text-gray-700">Chapter Video</label>
               <VideoUpload
@@ -463,7 +529,7 @@ function ChapterForm({
           )}
 
           {/* Video Selection for New Chapters */}
-          {!chapter && (
+          {!chapter && contentType === 'video' && (
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">Chapter Video (Optional)</label>
               {pendingVideoPreview ? (

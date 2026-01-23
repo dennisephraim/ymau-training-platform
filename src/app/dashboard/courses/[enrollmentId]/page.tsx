@@ -12,6 +12,7 @@ import {
   Award,
   PartyPopper,
   HelpCircle,
+  FileText,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -636,9 +637,15 @@ export default function CourseViewerPage({
                               {chapter.title}
                             </p>
                             <div className="flex items-center space-x-2 mt-1">
-                              <Clock className="h-3 w-3 text-gray-400" />
+                              {chapter.contentType === 'text' ? (
+                                <FileText className="h-3 w-3 text-blue-500" />
+                              ) : (
+                                <Clock className="h-3 w-3 text-gray-400" />
+                              )}
                               <span className="text-xs text-gray-500">
-                                {formatDuration(chapter.durationSeconds)}
+                                {chapter.contentType === 'text' 
+                                  ? 'Reading' 
+                                  : formatDuration(chapter.durationSeconds)}
                               </span>
                               {!videoComplete && percentage > 0 && (
                                 <>
@@ -709,6 +716,8 @@ function ChapterVideoPlayer({
   onProgressUpdate: () => void;
   onComplete: () => void;
 }) {
+  const [markingComplete, setMarkingComplete] = useState(false);
+  
   const {
     watchedSegments,
     lastPosition,
@@ -738,6 +747,93 @@ function ChapterVideoPlayer({
     onComplete();
   }, [saveProgress, onProgressUpdate, onComplete]);
 
+  // Handle marking text chapter as complete
+  const handleMarkTextComplete = useCallback(async () => {
+    if (markingComplete) return;
+    setMarkingComplete(true);
+    try {
+      // Mark chapter as 100% complete - use full duration as watched segment
+      const fullDuration = chapter.durationSeconds || 60; // Default to 60s for text chapters
+      await progressService.saveChapterProgress(
+        enrollmentId,
+        chapter.id,
+        courseId,
+        studentId,
+        [{ start: 0, end: fullDuration }], // Full segment watched
+        fullDuration, // Last position at end
+        fullDuration // Chapter duration
+      );
+      onProgressUpdate();
+      onComplete();
+    } catch (error) {
+      console.error('Error marking chapter complete:', error);
+    } finally {
+      setMarkingComplete(false);
+    }
+  }, [enrollmentId, chapter.id, courseId, studentId, chapter.durationSeconds, onProgressUpdate, onComplete, markingComplete]);
+
+  // Render text chapter content
+  if (chapter.contentType === 'text') {
+    return (
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-blue-600" />
+              <CardTitle className="text-lg">{chapter.title}</CardTitle>
+            </div>
+            {isCompleted && (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                <CheckCircle className="h-3 w-3 mr-1" />
+                Completed
+              </span>
+            )}
+          </div>
+          {chapter.description && (
+            <p className="text-sm text-gray-500 mt-1">{chapter.description}</p>
+          )}
+        </CardHeader>
+        <CardContent>
+          {/* Text content display area with fixed height */}
+          <div className="aspect-video bg-gray-50 rounded-lg border border-gray-200 overflow-auto p-6">
+            <div className="prose prose-sm max-w-none">
+              {chapter.textContent ? (
+                <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
+                  {chapter.textContent}
+                </div>
+              ) : (
+                <p className="text-gray-500 italic">No content available</p>
+              )}
+            </div>
+          </div>
+
+          {/* Mark as complete button */}
+          <div className="mt-4 flex items-center justify-between">
+            <span className="text-sm text-gray-500">
+              Read through the content above, then mark as complete to continue.
+            </span>
+            {!isCompleted ? (
+              <Button
+                onClick={handleMarkTextComplete}
+                disabled={markingComplete}
+                isLoading={markingComplete}
+                size="sm"
+              >
+                <CheckCircle className="h-4 w-4 mr-1" />
+                Mark as Complete
+              </Button>
+            ) : (
+              <span className="text-sm text-green-600 font-medium">
+                ✓ You&apos;ve completed this chapter
+              </span>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Render video chapter content (default)
   return (
     <Card>
       <CardHeader className="pb-2">
