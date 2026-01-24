@@ -47,4 +47,8 @@ export interface CourseProgress {
   completedChapters: number;
   overallPercentage: number;
   chapterProgress: ChapterProgress[];
+  // Component-based tracking (content + quizzes)
+  totalComponents: number;
+  completedComponents: number;
+  componentPercentage: number;
 }

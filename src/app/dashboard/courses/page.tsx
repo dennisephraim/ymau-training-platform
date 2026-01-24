@@ -479,7 +479,7 @@ function EnrolledCourseCard({ enrollment }: { enrollment: EnrolledCourse }) {
   }
 
   const isCompleted = enrollment.status === 'completed';
-  const progressPercentage = progress?.overallPercentage || 0;
+  const progressPercentage = progress?.componentPercentage || 0;
   const completedChapters = progress?.completedChapters || 0;
   const totalChapters = progress?.totalChapters || course.chapterCount;
 

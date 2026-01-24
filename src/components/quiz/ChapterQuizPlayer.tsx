@@ -29,6 +29,7 @@ interface ChapterQuizPlayerProps {
   enrollmentId: string;
   studentId: string;
   quizProgress: QuizProgress | null;
+  isLastChapter?: boolean;
   onComplete: (passed: boolean) => void;
 }
 
@@ -39,6 +40,7 @@ export function ChapterQuizPlayer({
   enrollmentId,
   studentId,
   quizProgress,
+  isLastChapter = false,
   onComplete,
 }: ChapterQuizPlayerProps) {
   const [state, setState] = useState<QuizState>('intro');
@@ -475,7 +477,9 @@ export function ChapterQuizPlayer({
             )}
             {result.passed && (
               <p className="text-center text-sm text-green-600">
-                You can now proceed to the next chapter!
+                {isLastChapter 
+                  ? 'Congratulations on completing the course!' 
+                  : 'You can now proceed to the next chapter!'}
               </p>
             )}
           </div>

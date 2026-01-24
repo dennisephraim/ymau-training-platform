@@ -418,7 +418,7 @@ export async function removeStudentFromCourse(
   if (!db) throw new Error('Firestore not initialized');
 
   // 1. Delete chapter progress documents
-  const progressRef = collection(db, 'chapterProgress');
+  const progressRef = collection(db, 'progress');
   const progressQuery = query(progressRef, where('enrollmentId', '==', enrollmentId));
   const progressSnapshot = await getDocs(progressQuery);
   

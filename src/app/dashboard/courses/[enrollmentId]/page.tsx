@@ -194,8 +194,17 @@ export default function CourseViewerPage({
     const updatedQuizProgressMap = new Map(quizProgress);
     updatedQuizProgressMap.set(chapterId, qProgress);
     
-    // Update state
+    // Update quiz progress state
     setQuizProgress(updatedQuizProgressMap);
+
+    // Refresh course progress to update the percentage
+    if (enrollment) {
+      const updatedCourseProgress = await progressService.getCourseProgress(
+        enrollmentId,
+        enrollment.courseId
+      );
+      setCourseProgress(updatedCourseProgress);
+    }
 
     if (passed && courseProgress) {
       // Check if course is now complete using the updated map (not stale state)
@@ -204,7 +213,7 @@ export default function CourseViewerPage({
         setShowCompletionModal(true);
       }
     }
-  }, [enrollmentId, courseProgress, certificate, checkAllChaptersComplete, quizProgress]);
+  }, [enrollmentId, enrollment, courseProgress, certificate, checkAllChaptersComplete, quizProgress]);
 
   // Generate certificate when course is completed
   const handleGenerateCertificate = useCallback(async () => {
@@ -348,7 +357,7 @@ export default function CourseViewerPage({
                     <span>{formatDuration(course.totalDurationSeconds)} total</span>
                     <span>•</span>
                     <span className="text-ymau-dark-red font-medium">
-                      {(courseProgress?.overallPercentage || 0).toFixed(0)}% complete
+                      {(courseProgress?.componentPercentage || 0).toFixed(0)}% complete
                     </span>
                   </div>
                 </div>
@@ -410,7 +419,7 @@ export default function CourseViewerPage({
           <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden mt-3">
             <div
               className="h-full bg-ymau-dark-red transition-all duration-300"
-              style={{ width: `${courseProgress?.overallPercentage || 0}%` }}
+              style={{ width: `${courseProgress?.componentPercentage || 0}%` }}
             />
           </div>
         </div>
@@ -477,6 +486,8 @@ export default function CourseViewerPage({
                 progress={courseProgress?.chapterProgress.find(
                   (p) => p.chapterId === activeChapter.id
                 )}
+                hasQuiz={chapterQuizzes.get(activeChapter.id)?.settings.enabled || false}
+                quizPassed={quizProgress.get(activeChapter.id)?.passed || false}
                 onProgressUpdate={handleProgressUpdate}
                 onComplete={() => {
                   // Don't auto-advance if there's a quiz to complete
@@ -505,6 +516,9 @@ export default function CourseViewerPage({
                 const quiz = chapterQuizzes.get(activeChapter.id);
                 const qProgress = quizProgress.get(activeChapter.id);
                 
+                // Check if this is the last chapter
+                const isLastChapter = chapters.indexOf(activeChapter) === chapters.length - 1;
+                
                 if (quiz && quiz.settings.enabled && videoComplete) {
                   return (
                     <ChapterQuizPlayer
@@ -512,6 +526,7 @@ export default function CourseViewerPage({
                       enrollmentId={enrollmentId}
                       studentId={user!.id}
                       quizProgress={qProgress || null}
+                      isLastChapter={isLastChapter}
                       onComplete={(passed) => handleQuizComplete(activeChapter.id, passed)}
                     />
                   );
@@ -526,7 +541,11 @@ export default function CourseViewerPage({
                           <HelpCircle className="h-5 w-5" />
                           <div>
                             <p className="font-medium">Chapter Quiz Available</p>
-                            <p className="text-sm">Complete the video to unlock the quiz</p>
+                            <p className="text-sm">
+                              {activeChapter.contentType === 'text' 
+                                ? 'Complete the reading to unlock the quiz'
+                                : 'Complete the video to unlock the quiz'}
+                            </p>
                           </div>
                         </div>
                       </CardContent>
@@ -705,6 +724,8 @@ function ChapterVideoPlayer({
   courseId,
   studentId,
   progress,
+  hasQuiz,
+  quizPassed,
   onProgressUpdate,
   onComplete,
 }: {
@@ -713,6 +734,8 @@ function ChapterVideoPlayer({
   courseId: string;
   studentId: string;
   progress?: ChapterProgress;
+  hasQuiz: boolean;
+  quizPassed: boolean;
   onProgressUpdate: () => void;
   onComplete: () => void;
 }) {
@@ -721,7 +744,7 @@ function ChapterVideoPlayer({
   const {
     watchedSegments,
     lastPosition,
-    isCompleted,
+    isCompleted: hookIsCompleted,
     watchedPercentage,
     updateProgress,
     saveProgress,
@@ -733,6 +756,10 @@ function ChapterVideoPlayer({
     studentId,
     chapterDuration: chapter.durationSeconds,
   });
+
+  // Use progress prop as source of truth (updates when parent state changes)
+  // Fall back to hook state for initial render
+  const isCompleted = progress?.isCompleted ?? hookIsCompleted;
 
   const handleProgress = useCallback(
     (segments: any, position: number) => {
@@ -772,6 +799,11 @@ function ChapterVideoPlayer({
     }
   }, [enrollmentId, chapter.id, courseId, studentId, chapter.durationSeconds, onProgressUpdate, onComplete, markingComplete]);
 
+  // Determine completion status
+  // Content is complete when isCompleted is true (video watched or text marked complete)
+  // Chapter is fully complete when content is done AND quiz is passed (if quiz exists)
+  const isChapterFullyComplete = isCompleted && (!hasQuiz || quizPassed);
+
   // Render text chapter content
   if (chapter.contentType === 'text') {
     return (
@@ -782,7 +814,7 @@ function ChapterVideoPlayer({
               <FileText className="h-5 w-5 text-blue-600" />
               <CardTitle className="text-lg">{chapter.title}</CardTitle>
             </div>
-            {isCompleted && (
+            {isChapterFullyComplete && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                 <CheckCircle className="h-3 w-3 mr-1" />
                 Completed
@@ -807,25 +839,60 @@ function ChapterVideoPlayer({
             </div>
           </div>
 
-          {/* Mark as complete button */}
+          {/* Mark as complete button - show appropriate state based on content and quiz completion */}
           <div className="mt-2 flex items-center justify-between">
-            <span className="text-sm text-gray-500">
-              Read through the content above, then mark as complete to continue.
-            </span>
-            {!isCompleted ? (
-              <Button
-                onClick={handleMarkTextComplete}
-                disabled={markingComplete}
-                isLoading={markingComplete}
-                size="sm"
-              >
-                <CheckCircle className="h-4 w-4 mr-1" />
-                Mark as Complete
-              </Button>
+            {!isCompleted && !quizPassed ? (
+              // Content not done, quiz not done (or no quiz)
+              <>
+                <span className="text-sm text-gray-500">
+                  {hasQuiz 
+                    ? 'Read through the content above, then mark as complete to unlock the quiz.'
+                    : 'Read through the content above, then mark as complete to continue.'}
+                </span>
+                <Button
+                  onClick={handleMarkTextComplete}
+                  disabled={markingComplete}
+                  isLoading={markingComplete}
+                  size="sm"
+                >
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                  Mark as Complete
+                </Button>
+              </>
+            ) : !isCompleted && quizPassed ? (
+              // Content not done but quiz is passed (edge case - mark content to finish)
+              <>
+                <span className="text-sm text-gray-500">
+                  Quiz passed! Mark the reading as complete to finish this chapter.
+                </span>
+                <Button
+                  onClick={handleMarkTextComplete}
+                  disabled={markingComplete}
+                  isLoading={markingComplete}
+                  size="sm"
+                >
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                  Mark as Complete
+                </Button>
+              </>
+            ) : isCompleted && hasQuiz && !quizPassed ? (
+              // Content done but quiz not passed
+              <>
+                <span className="text-sm text-green-600">
+                  ✓ Reading complete
+                </span>
+                <span className="text-sm text-gray-500">
+                  Complete the quiz below to finish this chapter.
+                </span>
+              </>
             ) : (
-              <span className="text-sm text-green-600 font-medium">
-                ✓ You&apos;ve completed this chapter
-              </span>
+              // Both content and quiz (if exists) are done
+              <>
+                <span className="text-sm text-green-600 font-medium">
+                  ✓ You&apos;ve completed this chapter
+                </span>
+                <span></span>
+              </>
             )}
           </div>
         </CardContent>
@@ -839,7 +906,7 @@ function ChapterVideoPlayer({
       <CardHeader className="pb-1">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">{chapter.title}</CardTitle>
-          {isCompleted && (
+          {isChapterFullyComplete && (
             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
               <CheckCircle className="h-3 w-3 mr-1" />
               Completed

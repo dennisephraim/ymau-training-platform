@@ -18,6 +18,7 @@ import {
   CourseProgress,
 } from '@/types/progress';
 import { getChapters } from './courses';
+import * as quizService from './quizzes';
 
 // Helper to convert Firestore timestamps to Date
 function toDate(timestamp: Timestamp | Date | null): Date | null {
@@ -202,6 +203,7 @@ export async function saveChapterProgress(
 
 /**
  * Get course-level progress summary
+ * Tracks both content (video/text) completion AND quiz completion as separate components
  */
 export async function getCourseProgress(
   enrollmentId: string,
@@ -214,13 +216,68 @@ export async function getCourseProgress(
   // Get progress for all chapters
   const chapterProgress = await getEnrollmentProgress(enrollmentId);
 
-  // Count completed chapters
-  const completedChapters = chapterProgress.filter((p) => p.isCompleted).length;
+  // Get all quizzes and quiz progress for component tracking
+  const quizzes = await quizService.getCourseQuizzes(courseId);
+  
+  // Deduplicate quizzes by chapterId (only one quiz per chapter counts)
+  const uniqueEnabledQuizzes = new Map<string, typeof quizzes[0]>();
+  for (const quiz of quizzes) {
+    if (quiz.settings.enabled && !uniqueEnabledQuizzes.has(quiz.chapterId)) {
+      uniqueEnabledQuizzes.set(quiz.chapterId, quiz);
+    }
+  }
+  
+  const quizProgressMap = await quizService.getCourseQuizProgress(enrollmentId, courseId);
 
-  // Calculate overall percentage
+  // Count completed content - only count chapters that exist
+  let completedContent = 0;
+  for (const chapter of chapters) {
+    const progress = chapterProgress.find(p => p.chapterId === chapter.id);
+    if (progress?.isCompleted) {
+      completedContent++;
+    }
+  }
+  
+  // Count completed quizzes (only counting unique enabled quizzes for chapters that exist)
+  let completedQuizzes = 0;
+  let quizCount = 0;
+  for (const chapter of chapters) {
+    const quiz = uniqueEnabledQuizzes.get(chapter.id);
+    if (quiz) {
+      quizCount++;
+      const qProgress = quizProgressMap.get(chapter.id);
+      if (qProgress?.passed) {
+        completedQuizzes++;
+      }
+    }
+  }
+
+  // Total components = chapters + quizzes that belong to those chapters
+  const totalComponents = totalChapters + quizCount;
+  const completedComponents = completedContent + completedQuizzes;
+  
+  // Component-based percentage (what we show to user)
+  const componentPercentage = totalComponents > 0 
+    ? (completedComponents / totalComponents) * 100 
+    : 0;
+
+  // Count fully completed chapters (content + quiz if exists)
+  let completedChapters = 0;
+  for (const chapter of chapters) {
+    const progress = chapterProgress.find(p => p.chapterId === chapter.id);
+    const contentDone = progress?.isCompleted || false;
+    
+    const quiz = uniqueEnabledQuizzes.get(chapter.id);
+    const quizPassed = quiz ? (quizProgressMap.get(chapter.id)?.passed || false) : true;
+    
+    if (contentDone && quizPassed) {
+      completedChapters++;
+    }
+  }
+
+  // Legacy overall percentage based on video duration (keep for backward compatibility)
   let overallPercentage = 0;
   if (totalChapters > 0) {
-    // Weight each chapter by its duration
     const totalDuration = chapters.reduce((sum, ch) => sum + ch.durationSeconds, 0);
 
     if (totalDuration > 0) {
@@ -246,6 +303,10 @@ export async function getCourseProgress(
     completedChapters,
     overallPercentage,
     chapterProgress,
+    // New component-based tracking
+    totalComponents,
+    completedComponents,
+    componentPercentage,
   };
 }
 

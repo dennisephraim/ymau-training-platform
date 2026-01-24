@@ -63,6 +63,11 @@ export function useVideoProgress({
         setIsLoading(true);
         setError(null);
 
+        // Reset state for new chapter
+        setWatchedSegments([]);
+        setLastPosition(0);
+        setIsCompleted(false);
+
         // Try to load from local storage first (faster)
         const localProgress = loadProgressFromLocalStorage(chapterId);
 

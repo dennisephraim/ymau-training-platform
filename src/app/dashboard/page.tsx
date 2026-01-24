@@ -99,7 +99,7 @@ export default function DashboardPage() {
           recentCoursesData.push({
             enrollment,
             course,
-            progress: progress.overallPercentage,
+            progress: progress.componentPercentage,
           });
         }
       }
