@@ -13,6 +13,7 @@ import {
   PartyPopper,
   HelpCircle,
   FileText,
+  Info,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -627,9 +628,9 @@ export default function CourseViewerPage({
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-3 min-w-0 flex-1">
                           <div
-                            className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                            className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
                               isFullyComplete
                                 ? 'bg-green-100'
                                 : isLocked
@@ -652,14 +653,15 @@ export default function CourseViewerPage({
                               className={`text-sm font-medium ${
                                 isActive ? 'text-ymau-dark-red' : 'text-gray-900'
                               } ${isLocked ? 'text-gray-400' : ''} truncate`}
+                              title={chapter.title}
                             >
                               {chapter.title}
                             </p>
                             <div className="flex items-center space-x-2 mt-1">
                               {chapter.contentType === 'text' ? (
-                                <FileText className="h-3 w-3 text-blue-500" />
+                                <FileText className="h-3 w-3 text-blue-500 shrink-0" />
                               ) : (
-                                <Clock className="h-3 w-3 text-gray-400" />
+                                <Clock className="h-3 w-3 text-gray-400 shrink-0" />
                               )}
                               <span className="text-xs text-gray-500">
                                 {chapter.contentType === 'text' 
@@ -691,9 +693,6 @@ export default function CourseViewerPage({
                             </div>
                           </div>
                         </div>
-                        {!isLocked && (
-                          <ChevronRight className="h-4 w-4 text-gray-400" />
-                        )}
                       </div>
 
                       {/* Chapter progress bar */}
@@ -813,6 +812,14 @@ function ChapterVideoPlayer({
             <div className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-blue-600" />
               <CardTitle className="text-lg">{chapter.title}</CardTitle>
+              {chapter.description && (
+                <div className="relative group">
+                  <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                  <div className="absolute left-0 top-full mt-1 w-72 p-3 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                    <p className="text-sm text-gray-600">{chapter.description}</p>
+                  </div>
+                </div>
+              )}
             </div>
             {isChapterFullyComplete && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -821,9 +828,6 @@ function ChapterVideoPlayer({
               </span>
             )}
           </div>
-          {chapter.description && (
-            <p className="text-sm text-gray-500 mt-1">{chapter.description}</p>
-          )}
         </CardHeader>
         <CardContent>
           {/* Text content display area - viewport-based height that scales */}
@@ -905,7 +909,17 @@ function ChapterVideoPlayer({
     <Card>
       <CardHeader className="pb-1">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">{chapter.title}</CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-lg">{chapter.title}</CardTitle>
+            {chapter.description && (
+              <div className="relative group">
+                <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                <div className="absolute left-0 top-full mt-1 w-72 p-3 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                  <p className="text-sm text-gray-600">{chapter.description}</p>
+                </div>
+              </div>
+            )}
+          </div>
           {isChapterFullyComplete && (
             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
               <CheckCircle className="h-3 w-3 mr-1" />
@@ -913,9 +927,6 @@ function ChapterVideoPlayer({
             </span>
           )}
         </div>
-        {chapter.description && (
-          <p className="text-sm text-gray-500 mt-1">{chapter.description}</p>
-        )}
       </CardHeader>
       <CardContent>
         {chapter.videoUrl ? (

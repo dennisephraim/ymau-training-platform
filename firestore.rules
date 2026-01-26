@@ -1,0 +1,253 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ============ HELPER FUNCTIONS ============
+    
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Get the current user's document
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    // Check if user has a specific role
+    function hasRole(role) {
+      return isAuthenticated() && getUserData().role == role;
+    }
+    
+    // Check if user is admin
+    function isAdmin() {
+      return hasRole('admin');
+    }
+    
+    // Check if user is instructor
+    function isInstructor() {
+      return hasRole('instructor');
+    }
+    
+    // Check if user is student
+    function isStudent() {
+      return hasRole('student');
+    }
+    
+    // Check if user is instructor or admin
+    function isInstructorOrAdmin() {
+      return isAuthenticated() && getUserData().role in ['instructor', 'admin'];
+    }
+    
+    // Check if the document belongs to the current user
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // ============ USERS COLLECTION ============
+    match /users/{userId} {
+      // Anyone authenticated can read user profiles (for displaying names, etc.)
+      allow read: if isAuthenticated();
+      
+      // Users can update their own profile (except role)
+      allow update: if isOwner(userId) && 
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']);
+      
+      // Only admins can create users or change roles
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+    
+    // ============ COURSES COLLECTION ============
+    match /courses/{courseId} {
+      // Allow authenticated users to read courses
+      // Client-side filtering handles visibility (instructors see their own, students see enrolled)
+      // This is necessary because complex rules with get() calls don't work well with queries
+      allow read: if isAuthenticated();
+      
+      // Instructors can create courses
+      allow create: if isInstructorOrAdmin();
+      
+      // Only the course instructor or admin can update/delete
+      allow update, delete: if isAuthenticated() && (
+        resource.data.instructorId == request.auth.uid ||
+        isAdmin()
+      );
+      
+      // Chapters subcollection
+      match /chapters/{chapterId} {
+        // Anyone authenticated can read chapters
+        allow read: if isAuthenticated();
+        
+        // Temporarily allow any authenticated user to manage chapters
+        // TODO: Add proper instructor check once working
+        allow create, update, delete: if isAuthenticated();
+      }
+    }
+    
+    // ============ ENROLLMENTS COLLECTION ============
+    match /enrollments/{enrollmentId} {
+      // Allow authenticated users to read enrollments
+      // Client-side queries filter by studentId or courseId appropriately
+      allow read: if isAuthenticated();
+      
+      // Students can create enrollments for themselves (via enrollment codes)
+      allow create: if isAuthenticated() && 
+        request.resource.data.studentId == request.auth.uid;
+      
+      // Instructors can update enrollments for their courses
+      // Students can update their own enrollment status
+      allow update: if isAuthenticated() && (
+        resource.data.studentId == request.auth.uid ||
+        isInstructorOrAdmin()
+      );
+      
+      // Only instructors/admins can delete enrollments
+      allow delete: if isInstructorOrAdmin();
+    }
+    
+    // ============ ENROLLMENT REQUESTS COLLECTION ============
+    match /enrollmentRequests/{requestId} {
+      // Allow authenticated users to read enrollment requests
+      // Client-side queries filter appropriately
+      allow read: if isAuthenticated();
+      
+      // Students can create requests
+      allow create: if isAuthenticated() && 
+        request.resource.data.studentId == request.auth.uid;
+      
+      // Instructors can update (approve/reject) requests
+      allow update: if isInstructorOrAdmin();
+      
+      // Instructors can delete requests
+      allow delete: if isInstructorOrAdmin();
+    }
+    
+    // ============ ENROLLMENT CODES COLLECTION ============
+    match /enrollmentCodes/{codeId} {
+      // Anyone can read codes (to validate them)
+      allow read: if isAuthenticated();
+      
+      // Only instructors/admins can create/manage codes
+      allow create, update, delete: if isInstructorOrAdmin();
+    }
+    
+    // ============ PROGRESS COLLECTION ============
+    match /progress/{progressId} {
+      // Allow authenticated users to read progress
+      // Client-side queries filter by studentId
+      allow read: if isAuthenticated();
+      
+      // Students can create/update their own progress
+      allow create: if isAuthenticated() && 
+        request.resource.data.studentId == request.auth.uid;
+      
+      allow update: if isAuthenticated() && 
+        resource.data.studentId == request.auth.uid;
+      
+      // Instructors can delete progress (when removing students)
+      allow delete: if isInstructorOrAdmin();
+    }
+    
+    // ============ QUIZZES COLLECTION ============
+    match /quizzes/{quizId} {
+      // Anyone enrolled can read quizzes
+      allow read: if isAuthenticated();
+      
+      // Only course instructors can manage quizzes
+      allow create, update, delete: if isInstructorOrAdmin();
+    }
+    
+    // ============ QUIZ ATTEMPTS COLLECTION ============
+    match /quizAttempts/{attemptId} {
+      // Allow authenticated users to read quiz attempts
+      // Client-side queries filter by studentId
+      allow read: if isAuthenticated();
+      
+      // Students can create/update their own attempts
+      allow create: if isAuthenticated() && 
+        request.resource.data.studentId == request.auth.uid;
+      
+      allow update: if isAuthenticated() && 
+        resource.data.studentId == request.auth.uid;
+      
+      // Instructors can delete attempts (when removing students)
+      allow delete: if isInstructorOrAdmin();
+    }
+    
+    // ============ CERTIFICATES COLLECTION ============
+    match /certificates/{certificateId} {
+      // Anyone can read certificates (for verification)
+      allow read: if true;
+      
+      // Only instructors/admins can create certificates
+      allow create: if isInstructorOrAdmin() || (
+        isAuthenticated() && request.resource.data.studentId == request.auth.uid
+      );
+      
+      // Only admins can update/delete certificates
+      allow update, delete: if isAdmin();
+    }
+    
+    // ============ CERTIFICATE TEMPLATES COLLECTION ============
+    match /certificateTemplates/{templateId} {
+      // Anyone authenticated can read templates
+      allow read: if isAuthenticated();
+      
+      // Only admins can manage templates
+      allow create, update, delete: if isAdmin();
+    }
+    
+    // ============ RESOURCES COLLECTION ============
+    match /resources/{resourceId} {
+      // Anyone authenticated can read resources
+      allow read: if isAuthenticated();
+      
+      // Only instructors/admins can manage resources
+      allow create, update, delete: if isInstructorOrAdmin();
+    }
+    
+    // ============ TASKS COLLECTION ============
+    match /tasks/{taskId} {
+      // Students can read tasks assigned to them or public tasks
+      // Instructors can read all tasks
+      allow read: if isAuthenticated();
+      
+      // Only instructors/admins can create/manage tasks
+      allow create, update, delete: if isInstructorOrAdmin();
+      
+      // Task responses subcollection (if used)
+      match /responses/{responseId} {
+        allow read: if isAuthenticated();
+        
+        allow create: if isAuthenticated() && 
+          request.resource.data.studentId == request.auth.uid;
+        
+        allow update: if isAuthenticated() && (
+          resource.data.studentId == request.auth.uid ||
+          isInstructorOrAdmin()
+        );
+        
+        allow delete: if isInstructorOrAdmin();
+      }
+    }
+    
+    // ============ TASK RESPONSES COLLECTION (if top-level) ============
+    match /taskResponses/{responseId} {
+      // Allow authenticated users to read task responses
+      allow read: if isAuthenticated();
+      
+      allow create: if isAuthenticated() && 
+        request.resource.data.studentId == request.auth.uid;
+      
+      allow update: if isAuthenticated() && (
+        resource.data.studentId == request.auth.uid ||
+        isInstructorOrAdmin()
+      );
+      
+      allow delete: if isInstructorOrAdmin();
+    }
+  }
+}

@@ -1,0 +1,88 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper function to check authentication
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // ============ VIDEOS ============
+    // Path: videos/{courseId}/{chapterId}/{filename}
+    match /videos/{courseId}/{chapterId}/{filename} {
+      // Anyone authenticated can read videos (enrolled students)
+      allow read: if isAuthenticated();
+      
+      // Authenticated users can upload videos (instructors)
+      // File size limit: 2GB, video types only
+      allow write: if isAuthenticated()
+        && request.resource.size < 2 * 1024 * 1024 * 1024
+        && request.resource.contentType.matches('video/.*');
+      
+      // Allow delete for instructors
+      allow delete: if isAuthenticated();
+    }
+    
+    // ============ THUMBNAILS ============
+    // Path: thumbnails/{courseId}/{chapterId}/{filename} or thumbnails/{courseId}/{filename}
+    match /thumbnails/{courseId}/{allPaths=**} {
+      // Anyone authenticated can read thumbnails
+      allow read: if isAuthenticated();
+      
+      // Authenticated users can upload thumbnails
+      // File size limit: 10MB, image types only
+      allow write: if isAuthenticated()
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      
+      // Allow delete
+      allow delete: if isAuthenticated();
+    }
+    
+    // ============ RESOURCES ============
+    // Path: resources/{resourceId}/{filename}
+    match /resources/{resourceId}/{filename} {
+      // Anyone authenticated can read resources
+      allow read: if isAuthenticated();
+      
+      // Authenticated users can upload resources (instructors)
+      // File size limit: 100MB
+      allow write: if isAuthenticated()
+        && request.resource.size < 100 * 1024 * 1024;
+      
+      // Allow delete
+      allow delete: if isAuthenticated();
+    }
+    
+    // ============ CERTIFICATES ============
+    // Path: certificates/{certificateId}/{filename}
+    match /certificates/{certificateId}/{filename} {
+      // Anyone can read certificates (for verification)
+      allow read: if true;
+      
+      // Authenticated users can create certificates
+      allow write: if isAuthenticated();
+      
+      // Only authenticated users can delete
+      allow delete: if isAuthenticated();
+    }
+    
+    // ============ USER AVATARS ============
+    // Path: avatars/{userId}/{filename}
+    match /avatars/{userId}/{filename} {
+      // Anyone authenticated can read avatars
+      allow read: if isAuthenticated();
+      
+      // Users can upload their own avatar
+      // File size limit: 5MB, image types only
+      allow write: if isAuthenticated()
+        && request.auth.uid == userId
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      
+      // Users can delete their own avatar
+      allow delete: if isAuthenticated() && request.auth.uid == userId;
+    }
+  }
+}
