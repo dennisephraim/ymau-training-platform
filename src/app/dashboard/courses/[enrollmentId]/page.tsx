@@ -480,6 +480,7 @@ export default function CourseViewerPage({
           {activeChapter ? (
             <>
               <ChapterVideoPlayer
+                key={activeChapter.id}
                 chapter={activeChapter}
                 enrollmentId={enrollmentId}
                 courseId={course.id}
@@ -935,6 +936,7 @@ function ChapterVideoPlayer({
             duration={chapter.durationSeconds}
             initialSegments={watchedSegments}
             initialPosition={lastPosition}
+            isCompleted={isCompleted}
             onProgress={handleProgress}
             onComplete={handleComplete}
           />
