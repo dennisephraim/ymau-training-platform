@@ -19,6 +19,7 @@ export interface ChapterProgress {
   watchedSegments: WatchedSegment[];
   totalWatchedSeconds: number;
   lastPosition: number;
+  maxWatchedPosition: number; // Furthest point watched (for seek restriction)
   isCompleted: boolean;
   completedAt: Date | null;
   updatedAt: Date;
@@ -32,6 +33,7 @@ export interface ChapterProgressDocument {
   watchedSegments: WatchedSegment[];
   totalWatchedSeconds: number;
   lastPosition: number;
+  maxWatchedPosition: number; // Furthest point watched (for seek restriction)
   isCompleted: boolean;
   completedAt: Date | null;
   updatedAt: Date;

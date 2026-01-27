@@ -55,6 +55,9 @@ export default function CourseViewerPage({
   // Quiz state
   const [chapterQuizzes, setChapterQuizzes] = useState<Map<string, ChapterQuiz>>(new Map());
   const [quizProgress, setQuizProgress] = useState<Map<string, QuizProgress>>(new Map());
+  
+  // Real-time watched percentage for active chapter (updates as user watches)
+  const [activeChapterPercentage, setActiveChapterPercentage] = useState<number>(0);
 
   // Fetch course data
   const fetchData = useCallback(async () => {
@@ -141,6 +144,11 @@ export default function CourseViewerPage({
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Reset active chapter percentage when switching chapters
+  useEffect(() => {
+    setActiveChapterPercentage(0);
+  }, [activeChapterId]);
 
   // Refresh progress after video updates
   const handleProgressUpdate = useCallback(async () => {
@@ -491,6 +499,7 @@ export default function CourseViewerPage({
                 hasQuiz={chapterQuizzes.get(activeChapter.id)?.settings.enabled || false}
                 quizPassed={quizProgress.get(activeChapter.id)?.passed || false}
                 onProgressUpdate={handleProgressUpdate}
+                onPercentageChange={setActiveChapterPercentage}
                 onComplete={() => {
                   // Don't auto-advance if there's a quiz to complete
                   const quiz = chapterQuizzes.get(activeChapter.id);
@@ -583,12 +592,15 @@ export default function CourseViewerPage({
                   );
                   const videoComplete = chapterProgress?.isCompleted || false;
                   const isActive = chapter.id === activeChapterId;
-                  const percentage = chapterProgress
-                    ? progressService.calculateWatchedPercentage(
-                        chapterProgress.watchedSegments,
-                        chapter.durationSeconds
-                      )
-                    : 0;
+                  // Use real-time percentage for active chapter, otherwise use saved progress
+                  const percentage = isActive && activeChapterPercentage > 0
+                    ? activeChapterPercentage
+                    : chapterProgress
+                      ? progressService.calculateWatchedPercentage(
+                          chapterProgress.watchedSegments,
+                          chapter.durationSeconds
+                        )
+                      : 0;
 
                   // Check quiz status
                   const quiz = chapterQuizzes.get(chapter.id);
@@ -728,6 +740,7 @@ function ChapterVideoPlayer({
   quizPassed,
   onProgressUpdate,
   onComplete,
+  onPercentageChange,
 }: {
   chapter: Chapter;
   enrollmentId: string;
@@ -738,12 +751,14 @@ function ChapterVideoPlayer({
   quizPassed: boolean;
   onProgressUpdate: () => void;
   onComplete: () => void;
+  onPercentageChange?: (percentage: number) => void;
 }) {
   const [markingComplete, setMarkingComplete] = useState(false);
   
   const {
     watchedSegments,
     lastPosition,
+    maxWatchedPosition,
     isCompleted: hookIsCompleted,
     watchedPercentage,
     updateProgress,
@@ -761,9 +776,16 @@ function ChapterVideoPlayer({
   // Fall back to hook state for initial render
   const isCompleted = progress?.isCompleted ?? hookIsCompleted;
 
+  // Notify parent of real-time percentage changes
+  useEffect(() => {
+    if (onPercentageChange && watchedPercentage > 0) {
+      onPercentageChange(watchedPercentage);
+    }
+  }, [watchedPercentage, onPercentageChange]);
+
   const handleProgress = useCallback(
-    (segments: any, position: number) => {
-      updateProgress(segments, position);
+    (segments: any, position: number, maxWatched?: number) => {
+      updateProgress(segments, position, maxWatched);
     },
     [updateProgress]
   );
@@ -932,10 +954,12 @@ function ChapterVideoPlayer({
       <CardContent>
         {chapter.videoUrl ? (
           <VideoPlayer
+            key={chapter.id}
             src={chapter.videoUrl}
             duration={chapter.durationSeconds}
             initialSegments={watchedSegments}
             initialPosition={lastPosition}
+            initialMaxWatched={maxWatchedPosition}
             isCompleted={isCompleted}
             onProgress={handleProgress}
             onComplete={handleComplete}

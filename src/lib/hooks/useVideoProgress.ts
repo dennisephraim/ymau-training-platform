@@ -24,11 +24,12 @@ interface UseVideoProgressOptions {
 interface UseVideoProgressReturn {
   watchedSegments: WatchedSegment[];
   lastPosition: number;
+  maxWatchedPosition: number;
   isCompleted: boolean;
   watchedPercentage: number;
   isLoading: boolean;
   error: Error | null;
-  updateProgress: (segments: WatchedSegment[], currentPosition: number) => void;
+  updateProgress: (segments: WatchedSegment[], currentPosition: number, maxWatched?: number) => void;
   saveProgress: () => Promise<void>;
   isSaving: boolean;
 }
@@ -43,6 +44,7 @@ export function useVideoProgress({
 }: UseVideoProgressOptions): UseVideoProgressReturn {
   const [watchedSegments, setWatchedSegments] = useState<WatchedSegment[]>([]);
   const [lastPosition, setLastPosition] = useState(0);
+  const [maxWatchedPosition, setMaxWatchedPosition] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -50,6 +52,7 @@ export function useVideoProgress({
 
   const pendingSegmentsRef = useRef<WatchedSegment[]>([]);
   const pendingPositionRef = useRef<number>(0);
+  const pendingMaxWatchedRef = useRef<number>(0);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedRef = useRef<number>(Date.now());
 
@@ -66,6 +69,7 @@ export function useVideoProgress({
         // Reset state for new chapter
         setWatchedSegments([]);
         setLastPosition(0);
+        setMaxWatchedPosition(0);
         setIsCompleted(false);
 
         // Try to load from local storage first (faster)
@@ -74,6 +78,7 @@ export function useVideoProgress({
         if (localProgress) {
           setWatchedSegments(localProgress.segments);
           setLastPosition(localProgress.lastPosition);
+          setMaxWatchedPosition(localProgress.maxWatchedPosition || 0);
         }
 
         // Then fetch from server (more accurate)
@@ -88,6 +93,13 @@ export function useVideoProgress({
           setWatchedSegments(mergedSegments);
           setLastPosition(
             Math.max(serverProgress.lastPosition, localProgress?.lastPosition || 0)
+          );
+          // Use the maximum of server and local maxWatchedPosition
+          setMaxWatchedPosition(
+            Math.max(
+              serverProgress.maxWatchedPosition || 0,
+              localProgress?.maxWatchedPosition || 0
+            )
           );
           setIsCompleted(serverProgress.isCompleted);
 
@@ -111,17 +123,24 @@ export function useVideoProgress({
 
   // Update progress (called frequently during playback)
   const updateProgress = useCallback(
-    (segments: WatchedSegment[], currentPosition: number) => {
+    (segments: WatchedSegment[], currentPosition: number, maxWatched?: number) => {
       const mergedSegments = mergeSegments([...watchedSegments, ...segments]);
       setWatchedSegments(mergedSegments);
       setLastPosition(Math.max(lastPosition, currentPosition));
+      
+      // Update maxWatchedPosition if provided
+      if (maxWatched !== undefined) {
+        const newMaxWatched = Math.max(maxWatchedPosition, maxWatched);
+        setMaxWatchedPosition(newMaxWatched);
+        pendingMaxWatchedRef.current = newMaxWatched;
+      }
 
       // Store pending updates
       pendingSegmentsRef.current = mergedSegments;
       pendingPositionRef.current = currentPosition;
 
       // Save to local storage immediately for resilience
-      saveProgressToLocalStorage(chapterId, mergedSegments, currentPosition);
+      saveProgressToLocalStorage(chapterId, mergedSegments, currentPosition, pendingMaxWatchedRef.current);
 
       // Check for completion
       const percentage = calculateWatchedPercentage(mergedSegments, chapterDuration);
@@ -129,7 +148,7 @@ export function useVideoProgress({
         setIsCompleted(true);
       }
     },
-    [watchedSegments, lastPosition, chapterId, chapterDuration, isCompleted]
+    [watchedSegments, lastPosition, maxWatchedPosition, chapterId, chapterDuration, isCompleted]
   );
 
   // Save progress to server
@@ -146,7 +165,8 @@ export function useVideoProgress({
         studentId,
         pendingSegmentsRef.current,
         pendingPositionRef.current,
-        chapterDuration
+        chapterDuration,
+        pendingMaxWatchedRef.current
       );
 
       // Clear local storage after successful server save
@@ -180,7 +200,8 @@ export function useVideoProgress({
         saveProgressToLocalStorage(
           chapterId,
           pendingSegmentsRef.current,
-          pendingPositionRef.current
+          pendingPositionRef.current,
+          pendingMaxWatchedRef.current
         );
       }
     };
@@ -199,6 +220,7 @@ export function useVideoProgress({
   return {
     watchedSegments,
     lastPosition,
+    maxWatchedPosition,
     isCompleted,
     watchedPercentage,
     isLoading,

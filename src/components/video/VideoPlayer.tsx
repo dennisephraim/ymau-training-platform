@@ -12,9 +12,10 @@ interface VideoPlayerProps {
   poster?: string;
   initialSegments?: WatchedSegment[];
   initialPosition?: number;
+  initialMaxWatched?: number;
   duration: number;
   isCompleted?: boolean;
-  onProgress?: (segments: WatchedSegment[], currentPosition: number) => void;
+  onProgress?: (segments: WatchedSegment[], currentPosition: number, maxWatched?: number) => void;
   onComplete?: () => void;
   onTimeUpdate?: (currentTime: number) => void;
   className?: string;
@@ -25,6 +26,7 @@ export function VideoPlayer({
   poster,
   initialSegments = [],
   initialPosition = 0,
+  initialMaxWatched,
   duration,
   isCompleted: initiallyCompleted = false,
   onProgress,
@@ -39,9 +41,12 @@ export function VideoPlayer({
   
   // maxWatched: the furthest point the user has watched
   // If already completed, set to full duration so they can seek anywhere
-  const [maxWatched, setMaxWatched] = useState<number>(
-    initiallyCompleted ? duration : getMaxWatchedPosition(initialSegments)
-  );
+  // Otherwise, use the initialMaxWatched if provided, or calculate from segments
+  const [maxWatched, setMaxWatched] = useState<number>(() => {
+    if (initiallyCompleted) return duration;
+    if (initialMaxWatched !== undefined && initialMaxWatched > 0) return initialMaxWatched;
+    return getMaxWatchedPosition(initialSegments);
+  });
   const [displayPosition, setDisplayPosition] = useState(0);
   const lastReportedPosition = useRef<number>(0);
   const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -63,6 +68,35 @@ export function VideoPlayer({
   useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
   useEffect(() => { onTimeUpdateRef.current = onTimeUpdate; }, [onTimeUpdate]);
   useEffect(() => { durationRef.current = duration; }, [duration]);
+
+  // Sync maxWatched when initialMaxWatched prop changes (from async load)
+  // Also seek to that position if video hasn't been played yet
+  const hasInitializedPosition = useRef(false);
+  useEffect(() => {
+    if (initialMaxWatched !== undefined && initialMaxWatched > 0 && initialMaxWatched > maxWatched) {
+      setMaxWatched(initialMaxWatched);
+      maxWatchedRef.current = initialMaxWatched;
+      
+      // If player exists, video isn't completed, and we haven't already positioned, seek to maxWatched
+      if (playerRef.current && !initiallyCompleted && !hasInitializedPosition.current) {
+        const currentTime = playerRef.current.currentTime() || 0;
+        // Only seek if we're still at/near the beginning (user hasn't started watching)
+        if (currentTime < 5) {
+          playerRef.current.currentTime(initialMaxWatched);
+          lastTimeRef.current = initialMaxWatched;
+          hasInitializedPosition.current = true;
+        }
+      }
+    }
+  }, [initialMaxWatched, initiallyCompleted]);
+
+  // Sync watchedSegments when initialSegments prop changes (from async load)
+  useEffect(() => {
+    if (initialSegments.length > 0 && watchedSegments.length === 0) {
+      setWatchedSegments(initialSegments);
+      watchedSegmentsRef.current = initialSegments;
+    }
+  }, [initialSegments]);
 
   // Track the last known time to detect seeks vs natural playback
   const lastTimeRef = useRef<number>(0);
@@ -102,8 +136,15 @@ export function VideoPlayer({
     playerRef.current = player;
 
     player.ready(() => {
-      if (initialPosition > 0) {
-        player.currentTime(initialPosition);
+      // If video isn't completed, start from the maxWatched position (resume where they left off)
+      // Otherwise start from the beginning (they can seek anywhere anyway)
+      const startPosition = !initiallyCompleted && maxWatchedRef.current > 0 
+        ? maxWatchedRef.current 
+        : initialPosition;
+      
+      if (startPosition > 0) {
+        player.currentTime(startPosition);
+        lastTimeRef.current = startPosition;
       }
     });
 
@@ -146,7 +187,7 @@ export function VideoPlayer({
           // Report every 5 seconds
           if (currentTime - lastReportedPosition.current >= 5) {
             lastReportedPosition.current = currentTime;
-            onProgressRef.current?.(updated, currentTime);
+            onProgressRef.current?.(updated, currentTime, maxWatchedRef.current);
           }
         }
 
@@ -174,7 +215,7 @@ export function VideoPlayer({
           const updated = mergeSegments([...watchedSegmentsRef.current, newSegment]);
           setWatchedSegments(updated);
           watchedSegmentsRef.current = updated;
-          onProgressRef.current?.(updated, currentTime);
+          onProgressRef.current?.(updated, currentTime, maxWatchedRef.current);
         }
       }
       setCurrentSegmentStart(null);
@@ -237,7 +278,7 @@ export function VideoPlayer({
         const updated = mergeSegments([...watchedSegmentsRef.current, finalSegment]);
         setWatchedSegments(updated);
         watchedSegmentsRef.current = updated;
-        onProgressRef.current?.(updated, durationRef.current);
+        onProgressRef.current?.(updated, durationRef.current, durationRef.current);
       }
 
       // Mark as fully watched

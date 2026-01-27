@@ -154,7 +154,8 @@ export async function saveChapterProgress(
   studentId: string,
   segments: WatchedSegment[],
   lastPosition: number,
-  chapterDuration: number
+  chapterDuration: number,
+  maxWatchedPosition?: number
 ): Promise<ChapterProgress> {
   if (!db) throw new Error('Firestore not initialized');
 
@@ -176,6 +177,13 @@ export async function saveChapterProgress(
   const isCompleted = watchedPercentage >= 95;
   const completedAt = isCompleted && !existing?.isCompleted ? new Date() : existing?.completedAt || null;
 
+  // Calculate maxWatchedPosition - use provided value, existing value, or calculate from segments
+  const calculatedMaxWatched = maxWatchedPosition ?? getMaxWatchedPosition(allSegments);
+  const finalMaxWatched = Math.max(
+    calculatedMaxWatched,
+    existing?.maxWatchedPosition || 0
+  );
+
   const progressData: ChapterProgressDocument = {
     enrollmentId,
     chapterId,
@@ -184,6 +192,7 @@ export async function saveChapterProgress(
     watchedSegments: allSegments,
     totalWatchedSeconds,
     lastPosition: Math.max(lastPosition, existing?.lastPosition || 0),
+    maxWatchedPosition: finalMaxWatched,
     isCompleted,
     completedAt,
     updatedAt: new Date(),
@@ -331,7 +340,8 @@ const PROGRESS_STORAGE_KEY = 'ymau_progress_';
 export function saveProgressToLocalStorage(
   chapterId: string,
   segments: WatchedSegment[],
-  lastPosition: number
+  lastPosition: number,
+  maxWatchedPosition?: number
 ): void {
   if (typeof window === 'undefined') return;
 
@@ -339,6 +349,7 @@ export function saveProgressToLocalStorage(
   const data = {
     segments,
     lastPosition,
+    maxWatchedPosition: maxWatchedPosition || 0,
     savedAt: Date.now(),
   };
   localStorage.setItem(key, JSON.stringify(data));
@@ -349,7 +360,7 @@ export function saveProgressToLocalStorage(
  */
 export function loadProgressFromLocalStorage(
   chapterId: string
-): { segments: WatchedSegment[]; lastPosition: number } | null {
+): { segments: WatchedSegment[]; lastPosition: number; maxWatchedPosition: number } | null {
   if (typeof window === 'undefined') return null;
 
   const key = PROGRESS_STORAGE_KEY + chapterId;
@@ -362,6 +373,7 @@ export function loadProgressFromLocalStorage(
     return {
       segments: data.segments || [],
       lastPosition: data.lastPosition || 0,
+      maxWatchedPosition: data.maxWatchedPosition || 0,
     };
   } catch {
     return null;
