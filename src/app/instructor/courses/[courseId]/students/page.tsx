@@ -17,7 +17,7 @@ import * as enrollmentService from '@/lib/services/enrollments';
 import * as enrollmentCodeService from '@/lib/services/enrollmentCodes';
 import * as courseService from '@/lib/services/courses';
 import * as userService from '@/lib/services/users';
-import { formatDate, formatRelativeTime } from '@/lib/utils/formatters';
+import { formatRelativeTime } from '@/lib/utils/formatters';
 
 export default function StudentsPage({
   params,
@@ -173,12 +173,12 @@ export default function StudentsPage({
       {/* Header */}
       <div className="flex items-start gap-3">
         <Link href="/instructor/courses" title="Back to Courses">
-          <Button variant="ghost" size="icon" className="shrink-0 mt-0.5">
-            <ArrowLeft className="h-5 w-5" />
+          <Button variant="ghost" size="icon" className="shrink-0 mt-0.5" aria-label="Back to Courses">
+            <ArrowLeft className="h-5 w-5" aria-hidden="true" />
           </Button>
         </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-gray-900 truncate">
             {course?.title || 'Students'}
           </h1>
           <p className="text-gray-600 mt-1">
@@ -188,52 +188,52 @@ export default function StudentsPage({
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Total Students</p>
-                <p className="text-2xl font-bold text-gray-900">{enrollments.length}</p>
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-sm text-gray-500 truncate">Total Students</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">{enrollments.length}</p>
               </div>
-              <Users className="h-8 w-8 text-ymau-dark-red" />
+              <Users className="h-6 w-6 sm:h-8 sm:w-8 text-ymau-dark-red shrink-0" aria-hidden="true" />
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Active</p>
-                <p className="text-2xl font-bold text-green-600">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-sm text-gray-500 truncate">Active</p>
+                <p className="text-xl sm:text-2xl font-bold text-green-600">
                   {enrollments.filter(e => e.status === 'active').length}
                 </p>
               </div>
-              <Check className="h-8 w-8 text-green-500" />
+              <Check className="h-6 w-6 sm:h-8 sm:w-8 text-green-500 shrink-0" aria-hidden="true" />
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Completed</p>
-                <p className="text-2xl font-bold text-blue-600">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-sm text-gray-500 truncate">Completed</p>
+                <p className="text-xl sm:text-2xl font-bold text-blue-600">
                   {enrollments.filter(e => e.status === 'completed').length}
                 </p>
               </div>
-              <Badge variant="success" className="h-8 px-3">Done</Badge>
+              <Badge variant="success" className="h-6 sm:h-8 px-2 sm:px-3 shrink-0">Done</Badge>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Pending Requests</p>
-                <p className="text-2xl font-bold text-yellow-600">{requests.length}</p>
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-sm text-gray-500 truncate">Pending</p>
+                <p className="text-xl sm:text-2xl font-bold text-yellow-600">{requests.length}</p>
               </div>
-              <Clock className="h-8 w-8 text-yellow-500" />
+              <Clock className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-500 shrink-0" aria-hidden="true" />
             </div>
           </CardContent>
         </Card>
@@ -243,12 +243,12 @@ export default function StudentsPage({
       <Tabs defaultValue="students" value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="students">
-            <Users className="h-4 w-4 mr-2" />
-            Students
+            <Users className="h-4 w-4 sm:mr-2" aria-hidden="true" />
+            <span className="hidden sm:inline">Students</span>
           </TabsTrigger>
           <TabsTrigger value="codes">
-            <Key className="h-4 w-4 mr-2" />
-            Enrollment Codes
+            <Key className="h-4 w-4 sm:mr-2" aria-hidden="true" />
+            <span className="hidden sm:inline">Enrollment Codes</span>
           </TabsTrigger>
         </TabsList>
 
@@ -257,10 +257,10 @@ export default function StudentsPage({
           {requests.length > 0 && (
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <CardTitle className="flex items-center">
-                      <Clock className="h-5 w-5 mr-2 text-yellow-500" />
+                      <Clock className="h-5 w-5 mr-2 text-yellow-500" aria-hidden="true" />
                       Pending Requests ({requests.length})
                     </CardTitle>
                     <CardDescription>
@@ -274,41 +274,41 @@ export default function StudentsPage({
                   {requests.map((request) => (
                     <div
                       key={request.id}
-                      className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-200 rounded-lg"
+                      className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 bg-yellow-50 border border-yellow-200 rounded-lg"
                     >
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center gap-3 min-w-0">
                         <Avatar
                           src={request.user?.photoURL}
                           fallback={request.user?.displayName || request.user?.email}
                           size="md"
                         />
-                        <div>
-                          <p className="font-medium text-gray-900">
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-900 truncate">
                             {request.user?.displayName || 'Unknown User'}
                           </p>
-                          <p className="text-sm text-gray-500">{request.user?.email}</p>
+                          <p className="text-sm text-gray-500 truncate">{request.user?.email}</p>
                           <p className="text-xs text-gray-400 mt-1">
                             Requested {formatRelativeTime(request.requestedAt)}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center gap-2 shrink-0">
                         <Button
                           size="sm"
                           onClick={() => handleApprove(request.id)}
-                          className="bg-green-600 hover:bg-green-700"
+                          className="bg-green-600 hover:bg-green-700 flex-1 sm:flex-none"
                         >
-                          <Check className="h-4 w-4 mr-1" />
-                          Approve
+                          <Check className="h-4 w-4 sm:mr-1" aria-hidden="true" />
+                          <span className="sm:inline">Approve</span>
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => handleReject(request.id)}
-                          className="text-red-600 border-red-300 hover:bg-red-50"
+                          className="text-red-600 border-red-300 hover:bg-red-50 flex-1 sm:flex-none"
                         >
-                          <X className="h-4 w-4 mr-1" />
-                          Reject
+                          <X className="h-4 w-4 sm:mr-1" aria-hidden="true" />
+                          <span className="sm:inline">Reject</span>
                         </Button>
                       </div>
                     </div>
@@ -321,18 +321,18 @@ export default function StudentsPage({
           {/* Enrolled Students */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle className="flex items-center">
-                    <Users className="h-5 w-5 mr-2" />
+                    <Users className="h-5 w-5 mr-2" aria-hidden="true" />
                     Enrolled Students ({enrollments.length})
                   </CardTitle>
                   <CardDescription>
                     Students currently enrolled in this course
                   </CardDescription>
                 </div>
-                <Button onClick={() => setShowAddModal(true)}>
-                  <UserPlus className="h-4 w-4 mr-2" />
+                <Button onClick={() => setShowAddModal(true)} className="w-full sm:w-auto">
+                  <UserPlus className="h-4 w-4 mr-2" aria-hidden="true" />
                   Add Student
                 </Button>
               </div>
@@ -340,7 +340,7 @@ export default function StudentsPage({
             <CardContent>
               {enrollments.length === 0 ? (
                 <div className="text-center py-8">
-                  <Users className="mx-auto h-12 w-12 text-gray-400" />
+                  <Users className="mx-auto h-12 w-12 text-gray-400" aria-hidden="true" />
                   <h3 className="mt-4 text-lg font-medium text-gray-900">No Students Yet</h3>
                   <p className="mt-2 text-sm text-gray-500">
                     Add students directly or share enrollment codes.
@@ -351,27 +351,27 @@ export default function StudentsPage({
                   {enrollments.map((enrollment) => (
                     <div
                       key={enrollment.id}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                      className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 bg-gray-50 rounded-lg"
                     >
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center gap-3 min-w-0">
                         <Avatar
                           src={enrollment.user?.photoURL}
                           fallback={enrollment.user?.displayName || enrollment.user?.email}
                           size="md"
                         />
-                        <div>
-                          <p className="font-medium text-gray-900">
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-900 truncate">
                             {enrollment.user?.displayName || 'Unknown User'}
                           </p>
-                          <p className="text-sm text-gray-500">{enrollment.user?.email}</p>
+                          <p className="text-sm text-gray-500 truncate">{enrollment.user?.email}</p>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-4">
-                        <div className="text-right text-sm">
-                          <p className="text-gray-500">
+                      <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
+                        <div className="text-left sm:text-right text-sm min-w-0">
+                          <p className="text-gray-500 truncate">
                             Enrolled {formatRelativeTime(enrollment.enrolledAt)}
                           </p>
-                          <p className="text-xs text-gray-400">
+                          <p className="text-xs text-gray-400 truncate">
                             via {enrollment.enrollmentMethod}
                           </p>
                         </div>
@@ -383,6 +383,7 @@ export default function StudentsPage({
                               ? 'default'
                               : 'warning'
                           }
+                          className="shrink-0"
                         >
                           {enrollment.status}
                         </Badge>
@@ -390,10 +391,10 @@ export default function StudentsPage({
                           variant="ghost"
                           size="icon"
                           onClick={() => handleRemoveStudent(enrollment)}
-                          className="text-gray-400 hover:text-red-600 hover:bg-red-50"
-                          title="Remove student"
+                          className="text-gray-400 hover:text-red-600 hover:bg-red-50 shrink-0"
+                          aria-label="Remove student"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4" aria-hidden="true" />
                         </Button>
                       </div>
                     </div>
@@ -407,18 +408,18 @@ export default function StudentsPage({
         <TabsContent value="codes" className="space-y-6">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle className="flex items-center">
-                    <Key className="h-5 w-5 mr-2" />
+                    <Key className="h-5 w-5 mr-2" aria-hidden="true" />
                     Enrollment Codes
                   </CardTitle>
                   <CardDescription>
                     Create and manage enrollment codes for students to join this course
                   </CardDescription>
                 </div>
-                <Button onClick={handleCreateCode}>
-                  <Plus className="h-4 w-4 mr-2" />
+                <Button onClick={handleCreateCode} className="w-full sm:w-auto">
+                  <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
                   Create Code
                 </Button>
               </div>
@@ -426,7 +427,7 @@ export default function StudentsPage({
             <CardContent>
               {enrollmentCodes.length === 0 ? (
                 <div className="text-center py-8">
-                  <Key className="mx-auto h-12 w-12 text-gray-400" />
+                  <Key className="mx-auto h-12 w-12 text-gray-400" aria-hidden="true" />
                   <h3 className="mt-4 text-lg font-medium text-gray-900">No Enrollment Codes</h3>
                   <p className="mt-2 text-sm text-gray-500">
                     Create a code to allow students to self-enroll in this course.
@@ -437,24 +438,25 @@ export default function StudentsPage({
                   {enrollmentCodes.map((code) => (
                     <div
                       key={code.id}
-                      className={`flex items-center justify-between p-4 rounded-lg border ${
+                      className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border ${
                         code.isActive ? 'bg-white border-gray-200' : 'bg-gray-100 border-gray-200'
                       }`}
                     >
-                      <div className="flex items-center space-x-4">
+                      <div className="flex items-center gap-3 sm:gap-4">
                         <div className="font-mono text-lg font-bold tracking-wider text-ymau-dark-red">
                           {code.code}
                         </div>
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           onClick={() => handleCopyCode(code.code)}
+                          aria-label="Copy code"
                         >
-                          <Copy className="h-4 w-4" />
+                          <Copy className="h-4 w-4" aria-hidden="true" />
                         </Button>
                       </div>
-                      <div className="flex items-center space-x-4">
-                        <div className="text-right text-sm">
+                      <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
+                        <div className="text-left sm:text-right text-sm min-w-0">
                           <p className="text-gray-500">
                             Used {code.useCount}{code.maxUses ? ` / ${code.maxUses}` : ''} times
                           </p>
@@ -462,27 +464,29 @@ export default function StudentsPage({
                             Created {formatRelativeTime(code.createdAt)}
                           </p>
                         </div>
-                        <Badge variant={code.isActive ? 'success' : 'default'}>
+                        <Badge variant={code.isActive ? 'success' : 'default'} className="shrink-0">
                           {code.isActive ? 'Active' : 'Inactive'}
                         </Badge>
-                        <div className="flex space-x-1">
+                        <div className="flex gap-1 shrink-0">
                           {code.isActive && (
                             <Button
                               variant="ghost"
-                              size="sm"
+                              size="icon"
                               onClick={() => handleDeactivateCode(code.id)}
                               className="text-gray-500 hover:text-gray-700"
+                              aria-label="Deactivate code"
                             >
-                              <X className="h-4 w-4" />
+                              <X className="h-4 w-4" aria-hidden="true" />
                             </Button>
                           )}
                           <Button
                             variant="ghost"
-                            size="sm"
+                            size="icon"
                             onClick={() => handleDeleteCode(code.id)}
                             className="text-red-500 hover:text-red-700"
+                            aria-label="Delete code"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4" aria-hidden="true" />
                           </Button>
                         </div>
                       </div>
@@ -559,9 +563,9 @@ function AddStudentModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
       <div className="fixed inset-0 bg-black/50" onClick={onClose} />
-      <Card className="relative z-10 w-full max-w-lg mx-4">
+      <Card className="relative z-10 w-full max-w-lg">
         <CardHeader>
           <CardTitle>Add Student</CardTitle>
           <CardDescription>
@@ -573,15 +577,16 @@ function AddStudentModal({
             <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>
           )}
 
-          <div className="flex space-x-2">
+          <div className="flex gap-2">
             <Input
               placeholder="Search by email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              className="flex-1"
             />
-            <Button onClick={handleSearch} disabled={searching}>
-              <Search className="h-4 w-4" />
+            <Button onClick={handleSearch} disabled={searching} aria-label="Search">
+              <Search className="h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
 
@@ -592,15 +597,15 @@ function AddStudentModal({
                   key={user.id}
                   className="flex items-center justify-between p-3 hover:bg-gray-50"
                 >
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center gap-3 min-w-0">
                     <Avatar
                       src={user.photoURL}
                       fallback={user.displayName || user.email}
                       size="sm"
                     />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{user.displayName}</p>
-                      <p className="text-xs text-gray-500">{user.email}</p>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{user.displayName}</p>
+                      <p className="text-xs text-gray-500 truncate">{user.email}</p>
                     </div>
                   </div>
                   <Button
@@ -608,6 +613,7 @@ function AddStudentModal({
                     onClick={() => handleAddStudent(user.id)}
                     disabled={adding === user.id}
                     isLoading={adding === user.id}
+                    className="shrink-0"
                   >
                     Add
                   </Button>

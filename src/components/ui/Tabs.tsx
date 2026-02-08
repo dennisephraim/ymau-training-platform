@@ -36,7 +36,7 @@ export function Tabs({
   className,
 }: TabsProps) {
   const [internalValue, setInternalValue] = useState(defaultValue);
-  
+
   const activeTab = value ?? internalValue;
   const setActiveTab = (newValue: string) => {
     setInternalValue(newValue);
@@ -62,6 +62,8 @@ export function TabsList({ children, className }: TabsListProps) {
       role="tablist"
       className={cn(
         'inline-flex items-center gap-1 p-1 bg-gray-100 rounded-lg',
+        'overflow-x-auto scrollbar-hide scroll-smooth-ios',
+        'max-w-full',
         className
       )}
     >
@@ -97,7 +99,9 @@ export function TabsTrigger({
       disabled={disabled}
       onClick={() => setActiveTab(value)}
       className={cn(
-        'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all',
+        'inline-flex items-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium rounded-md',
+        'transition-all whitespace-nowrap touch-action-manipulation',
+        'focus-visible:ring-2 focus-visible:ring-ymau-dark-red focus-visible:ring-offset-2 focus-visible:outline-none',
         isActive
           ? 'bg-white text-gray-900 shadow-sm'
           : 'text-gray-600 hover:text-gray-900 hover:bg-white/50',
@@ -105,7 +109,7 @@ export function TabsTrigger({
         className
       )}
     >
-      {icon}
+      {icon && <span aria-hidden="true">{icon}</span>}
       {children}
     </button>
   );

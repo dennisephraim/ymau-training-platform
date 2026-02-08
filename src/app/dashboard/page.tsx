@@ -6,13 +6,11 @@ import { useAuth } from '@/components/auth/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { Progress, CircularProgress } from '@/components/ui/Progress';
+import { CircularProgress } from '@/components/ui/Progress';
 import { EmptyState } from '@/components/ui/EmptyState';
 import {
   BookOpen,
-  GraduationCap,
   Award,
-  Clock,
   Play,
   Users,
   Plus,
@@ -24,12 +22,10 @@ import {
   Target,
   FolderOpen,
   ClipboardList,
-  Eye,
   FileText,
 } from 'lucide-react';
 import { Enrollment } from '@/types/enrollment';
 import { Course } from '@/types/course';
-import { Certificate } from '@/types/certificate';
 import * as enrollmentService from '@/lib/services/enrollments';
 import * as courseService from '@/lib/services/courses';
 import * as certificateService from '@/lib/services/certificates';
@@ -131,7 +127,7 @@ export default function DashboardPage() {
       // Fetch instructor-specific data
       if (user.role === 'instructor' || user.role === 'admin') {
         const allTasks = await taskService.getInstructorTasks(user.id);
-        
+
         // Count pending responses (unreviewed task submissions)
         let pendingResponses = 0;
         for (const task of allTasks) {
@@ -154,21 +150,21 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="space-y-8 animate-fade-in">
+      <div className="space-y-6 sm:space-y-8 animate-fade-in">
         {/* Welcome Header Skeleton */}
-        <div className="relative overflow-hidden rounded-2xl p-8 bg-gray-200 animate-pulse" style={{ minHeight: '220px' }}>
+        <div className="relative overflow-hidden rounded-2xl p-6 sm:p-8 bg-gray-200 animate-pulse" style={{ minHeight: '200px' }}>
           <div className="relative space-y-4">
             <div className="flex items-center gap-2">
               <div className="w-5 h-5 bg-gray-300 rounded-full"></div>
               <div className="h-4 bg-gray-300 rounded w-24"></div>
             </div>
-            <div className="h-9 bg-gray-300 rounded-lg w-72"></div>
+            <div className="h-9 bg-gray-300 rounded-lg w-72 max-w-full"></div>
             <div className="h-4 bg-gray-300 rounded w-96 max-w-full"></div>
-            
+
             {/* Stats skeleton */}
-            <div className="flex items-center gap-6 mt-6">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-6 mt-6">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center gap-3 bg-gray-300/50 rounded-xl px-4 py-2">
+                <div key={i} className="flex items-center gap-3 bg-gray-300/50 rounded-xl px-3 sm:px-4 py-2">
                   <div className="w-5 h-5 bg-gray-300 rounded"></div>
                   <div className="space-y-1">
                     <div className="h-3 bg-gray-300 rounded w-12"></div>
@@ -182,15 +178,15 @@ export default function DashboardPage() {
 
         {/* Continue Learning Skeleton */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-2">
               <div className="h-6 bg-gray-200 rounded w-40 animate-pulse"></div>
               <div className="h-4 bg-gray-200 rounded w-48 animate-pulse"></div>
             </div>
             <div className="h-9 bg-gray-200 rounded w-20 animate-pulse"></div>
           </div>
-          
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="bg-white rounded-xl border border-gray-200 p-5 animate-pulse">
                 <div className="flex items-start justify-between">
@@ -217,9 +213,9 @@ export default function DashboardPage() {
   const greeting = getGreeting();
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-6 sm:space-y-8 animate-fade-in">
       {/* Welcome Header */}
-      <div className="relative overflow-hidden rounded-2xl p-8 text-white h-58" style={{ backgroundImage: 'url(/ymau-banner.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundColor: '#1e1b4b' }}>
+      <div className="relative overflow-hidden rounded-2xl p-6 sm:p-8 text-white" style={{ backgroundImage: 'url(/ymau-banner.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundColor: '#1e1b4b' }}>
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative">
           <div className="flex items-center gap-2 text-white/80 text-sm mb-2">
@@ -231,38 +227,38 @@ export default function DashboardPage() {
             />
             {greeting}
           </div>
-          <h1 className="text-3xl font-bold">Welcome back, {firstName}!</h1>
-          <p className="mt-2 text-white/80 max-w-xl">
-            {user?.role === 'student' 
+          <h1 className="text-2xl sm:text-3xl font-bold">Welcome back, {firstName}!</h1>
+          <p className="mt-2 text-white/80 max-w-xl text-sm sm:text-base">
+            {user?.role === 'student'
               ? "Continue your activities. Every video watched brings you closer to your goals."
               : user?.role === 'instructor'
               ? "Manage your courses and track student progress from your dashboard."
               : "Full access to manage users, courses, and system settings."}
           </p>
         </div>
-        
+
         {/* Quick stats in header */}
         {user?.role === 'student' && stats.enrolledCourses > 0 && (
-          <div className="relative mt-6 flex items-center gap-6">
-            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2">
-              <Target className="h-5 w-5" />
+          <div className="relative mt-4 sm:mt-6 flex flex-wrap items-center gap-3 sm:gap-6">
+            <div className="flex items-center gap-2 sm:gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-3 sm:px-4 py-2">
+              <Target className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
               <div>
-                <p className="text-xs text-white/70">Courses</p>
-                <p className="font-semibold">{stats.enrolledCourses}</p>
+                <p className="text-[10px] sm:text-xs text-white/70">Courses</p>
+                <p className="font-semibold text-sm sm:text-base">{stats.enrolledCourses}</p>
               </div>
             </div>
-            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2">
-              <TrendingUp className="h-5 w-5" />
+            <div className="flex items-center gap-2 sm:gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-3 sm:px-4 py-2">
+              <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
               <div>
-                <p className="text-xs text-white/70">Completed</p>
-                <p className="font-semibold">{stats.completed}</p>
+                <p className="text-[10px] sm:text-xs text-white/70">Completed</p>
+                <p className="font-semibold text-sm sm:text-base">{stats.completed}</p>
               </div>
             </div>
-            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2">
-              <Award className="h-5 w-5" />
+            <div className="flex items-center gap-2 sm:gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-3 sm:px-4 py-2">
+              <Award className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
               <div>
-                <p className="text-xs text-white/70">Certificates</p>
-                <p className="font-semibold">{stats.certificates}</p>
+                <p className="text-[10px] sm:text-xs text-white/70">Certificates</p>
+                <p className="font-semibold text-sm sm:text-base">{stats.certificates}</p>
               </div>
             </div>
           </div>
@@ -275,7 +271,7 @@ export default function DashboardPage() {
           {/* Continue Activities Section */}
           {recentCourses.length > 0 ? (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900">Continue Activities</h2>
                   <p className="text-sm text-gray-500">Pick up where you left off</p>
@@ -283,25 +279,25 @@ export default function DashboardPage() {
                 <Link href="/dashboard/courses">
                   <Button variant="ghost" size="sm">
                     View All
-                    <ArrowRight className="h-4 w-4 ml-1" />
+                    <ArrowRight className="h-4 w-4 ml-1" aria-hidden="true" />
                   </Button>
                 </Link>
               </div>
-              
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {recentCourses.map(({ enrollment, course, progress }) => (
-                  <Link 
-                    key={enrollment.id} 
+                  <Link
+                    key={enrollment.id}
                     href={`/dashboard/courses/${enrollment.id}`}
                     className="group"
                   >
-                    <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-ymau-dark-red/30 hover:shadow-lg hover:shadow-ymau-dark-red/10 transition-all duration-300">
-                      <div className="flex items-start justify-between">
+                    <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 hover:border-ymau-dark-red/30 hover:shadow-lg hover:shadow-ymau-dark-red/10 transition-all duration-300">
+                      <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             {enrollment.status === 'completed' ? (
                               <Badge variant="success" size="sm">
-                                <CheckCircle className="h-3 w-3" />
+                                <CheckCircle className="h-3 w-3" aria-hidden="true" />
                                 Completed
                               </Badge>
                             ) : (
@@ -315,20 +311,20 @@ export default function DashboardPage() {
                             {course.chapterCount} chapters • {formatDuration(course.totalDurationSeconds)}
                           </p>
                         </div>
-                        <CircularProgress 
-                          value={progress} 
+                        <CircularProgress
+                          value={progress}
                           size="md"
                           strokeWidth={4}
                           className="shrink-0"
                         />
                       </div>
-                      
+
                       <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
                         <span className="text-sm text-gray-500">
                           {Math.round(progress)}% complete
                         </span>
                         <span className="text-sm font-medium text-ymau-dark-red group-hover:text-ymau-dark-red/80 flex items-center gap-1">
-                          <Play className="h-3 w-3" />
+                          <Play className="h-3 w-3" aria-hidden="true" />
                           {enrollment.status === 'completed' ? 'Review' : 'Continue'}
                         </span>
                       </div>
@@ -348,7 +344,7 @@ export default function DashboardPage() {
                   action={
                     <Link href="/dashboard/courses">
                       <Button>
-                        <Plus className="h-4 w-4 mr-2" />
+                        <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
                         Join Course
                       </Button>
                     </Link>
@@ -370,26 +366,26 @@ export default function DashboardPage() {
             <CardContent className="p-5">
               <div className="flex items-center gap-3 mb-4">
                 <div className="p-2 bg-ymau-dark-red/10 rounded-lg">
-                  <Sparkles className="h-5 w-5 text-ymau-dark-red" />
+                  <Sparkles className="h-5 w-5 text-ymau-dark-red" aria-hidden="true" />
                 </div>
                 <h3 className="font-semibold text-gray-900">Quick Actions</h3>
               </div>
               <div className="space-y-2">
                 <Link href="/instructor/courses/new" className="block">
-                  <button className="w-full flex items-center gap-3 px-3 py-2.5 bg-ymau-dark-red/5 hover:bg-ymau-dark-red/10 border border-ymau-dark-red/10 rounded-lg transition-colors text-left">
-                    <Plus className="h-4 w-4 text-ymau-dark-red" />
+                  <button className="w-full flex items-center gap-3 px-3 py-2.5 bg-ymau-dark-red/5 hover:bg-ymau-dark-red/10 border border-ymau-dark-red/10 rounded-lg transition-colors text-left touch-action-manipulation">
+                    <Plus className="h-4 w-4 text-ymau-dark-red shrink-0" aria-hidden="true" />
                     <span className="text-sm text-gray-700">Create Course</span>
                   </button>
                 </Link>
                 <Link href="/instructor/tasks/new" className="block">
-                  <button className="w-full flex items-center gap-3 px-3 py-2.5 bg-ymau-dark-red/5 hover:bg-ymau-dark-red/10 border border-ymau-dark-red/10 rounded-lg transition-colors text-left">
-                    <ClipboardList className="h-4 w-4 text-ymau-dark-red" />
+                  <button className="w-full flex items-center gap-3 px-3 py-2.5 bg-ymau-dark-red/5 hover:bg-ymau-dark-red/10 border border-ymau-dark-red/10 rounded-lg transition-colors text-left touch-action-manipulation">
+                    <ClipboardList className="h-4 w-4 text-ymau-dark-red shrink-0" aria-hidden="true" />
                     <span className="text-sm text-gray-700">Create Task</span>
                   </button>
                 </Link>
                 <Link href="/instructor/resources" className="block">
-                  <button className="w-full flex items-center gap-3 px-3 py-2.5 bg-ymau-dark-red/5 hover:bg-ymau-dark-red/10 border border-ymau-dark-red/10 rounded-lg transition-colors text-left">
-                    <FileText className="h-4 w-4 text-ymau-dark-red" />
+                  <button className="w-full flex items-center gap-3 px-3 py-2.5 bg-ymau-dark-red/5 hover:bg-ymau-dark-red/10 border border-ymau-dark-red/10 rounded-lg transition-colors text-left touch-action-manipulation">
+                    <FileText className="h-4 w-4 text-ymau-dark-red shrink-0" aria-hidden="true" />
                     <span className="text-sm text-gray-700">Add Resource</span>
                   </button>
                 </Link>
@@ -402,7 +398,7 @@ export default function DashboardPage() {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4 text-emerald-500" />
+                  <BarChart3 className="h-4 w-4 text-emerald-500" aria-hidden="true" />
                   Navigation
                 </CardTitle>
               </CardHeader>
@@ -415,32 +411,6 @@ export default function DashboardPage() {
                 )}
               </CardContent>
             </Card>
-
-            {/* Pending Reviews Alert */}
-            {/* {instructorStats.pendingResponses > 0 && (
-              <Card className="border-orange-200 bg-orange-50">
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-orange-100 rounded-lg">
-                      <Eye className="h-4 w-4 text-orange-600" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-orange-900">
-                        {instructorStats.pendingResponses} task{instructorStats.pendingResponses !== 1 ? 's' : ''} to review
-                      </p>
-                      <p className="text-xs text-orange-700 mt-0.5">
-                        Students are waiting for feedback
-                      </p>
-                      <Link href="/instructor/tasks" className="inline-block mt-2">
-                        <Button size="sm" variant="outline" className="h-7 text-xs border-orange-300 text-orange-700 hover:bg-orange-100">
-                          Review Now
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )} */}
           </div>
         </div>
       )}
@@ -450,15 +420,15 @@ export default function DashboardPage() {
 
 function QuickLink({ href, label, icon }: { href: string; label: string; icon?: React.ReactNode }) {
   return (
-    <Link 
+    <Link
       href={href}
-      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group"
+      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group touch-action-manipulation"
     >
-      <div className="flex items-center gap-2">
-        {icon && <span className="text-gray-400">{icon}</span>}
-        <span className="text-sm text-gray-700">{label}</span>
+      <div className="flex items-center gap-2 min-w-0">
+        {icon && <span className="text-gray-400 shrink-0" aria-hidden="true">{icon}</span>}
+        <span className="text-sm text-gray-700 truncate">{label}</span>
       </div>
-      <ArrowRight className="h-4 w-4 text-gray-400 group-hover:translate-x-0.5 transition-transform" />
+      <ArrowRight className="h-4 w-4 text-gray-400 group-hover:translate-x-0.5 transition-transform shrink-0" aria-hidden="true" />
     </Link>
   );
 }

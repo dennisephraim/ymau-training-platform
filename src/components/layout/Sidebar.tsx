@@ -3,110 +3,14 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import {
-  BookOpen,
-  GraduationCap,
-  Award,
-  Users,
-  Settings,
-  BarChart3,
-  LayoutDashboard,
-  FolderOpen,
-  LogOut,
-  FileText,
-  ClipboardList,
-} from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/components/auth/AuthContext';
-
-interface NavItem {
-  label: string;
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-  roles?: ('student' | 'instructor' | 'admin')[];
-  badge?: string;
-}
-
-interface NavSection {
-  title?: string;
-  items: NavItem[];
-}
-
-const navSections: NavSection[] = [
-  {
-    items: [
-      {
-        label: 'Dashboard',
-        href: '/dashboard',
-        icon: LayoutDashboard,
-      },
-    ],
-  },
-  {
-    title: 'Activities',
-    items: [
-      {
-        label: 'My Activities',
-        href: '/dashboard/courses',
-        icon: BookOpen,
-      },
-      {
-        label: 'Resources',
-        href: '/dashboard/resources',
-        icon: FileText,
-      },
-      {
-        label: 'Certificates',
-        href: '/dashboard/certificates',
-        icon: Award,
-      },
-    ],
-  },
-  {
-    title: 'Teaching',
-    items: [
-      {
-        label: 'My Courses',
-        href: '/instructor/courses',
-        icon: FolderOpen,
-        roles: ['instructor', 'admin'],
-      },
-      {
-        label: 'Tasks',
-        href: '/instructor/tasks',
-        icon: ClipboardList,
-        roles: ['instructor', 'admin'],
-      },
-      {
-        label: 'Resources',
-        href: '/instructor/resources',
-        icon: FileText,
-        roles: ['instructor', 'admin'],
-      },
-      {
-        label: 'Analytics',
-        href: '/instructor/analytics',
-        icon: BarChart3,
-        roles: ['instructor', 'admin'],
-      },
-    ],
-  },
-  {
-    title: 'Administration',
-    items: [
-      {
-        label: 'Manage Users',
-        href: '/admin/users',
-        icon: Users,
-        roles: ['admin'],
-      },
-    ],
-  },
-];
+import { navSections } from './navigationConfig';
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
 
   const filteredSections = navSections
     .map((section) => ({
@@ -119,16 +23,18 @@ export function Sidebar() {
     .filter((section) => section.items.length > 0);
 
   return (
-    <aside className="flex h-screen w-64 flex-col bg-white border-r border-gray-200/80">
+    <aside className="hidden md:flex h-screen w-64 flex-col bg-white border-r border-gray-200/80">
       {/* Logo */}
       <div className="flex h-16 items-center px-5 border-b border-gray-100">
-        <Link href="/dashboard" className="flex items-center gap-3 group">
+        <Link
+          href="/dashboard"
+          className="flex items-center gap-3 group focus-visible:ring-2 focus-visible:ring-ymau-dark-red focus-visible:ring-offset-2 focus-visible:outline-none rounded-lg"
+        >
           <Image
             src="/YMAU Crest.svg"
             alt="YMAU Crest"
             width={40}
             height={40}
-            className=""
           />
           <div>
             <span className="text-base font-semibold text-gray-900">YMAU</span>
@@ -138,7 +44,7 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3">
+      <nav className="flex-1 overflow-y-auto py-4 px-3" aria-label="Main navigation">
         {filteredSections.map((section, sectionIndex) => (
           <div key={sectionIndex} className={cn(sectionIndex > 0 && 'mt-6')}>
             {section.title && (
@@ -159,6 +65,7 @@ export function Sidebar() {
                     href={item.href}
                     className={cn(
                       'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
+                      'focus-visible:ring-2 focus-visible:ring-ymau-dark-red focus-visible:ring-offset-2 focus-visible:outline-none',
                       isActive
                         ? 'bg-ymau-dark-red/10 text-ymau-dark-red'
                         : 'text-gray-600 hover:bg-ymau-dark-red/5 hover:text-gray-900'
@@ -171,6 +78,7 @@ export function Sidebar() {
                           ? 'text-ymau-dark-red'
                           : 'text-gray-400 group-hover:text-gray-600'
                       )}
+                      aria-hidden="true"
                     />
                     <span>{item.label}</span>
                     {item.badge && (
@@ -192,15 +100,19 @@ export function Sidebar() {
           href="/dashboard/settings"
           className={cn(
             'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
+            'focus-visible:ring-2 focus-visible:ring-ymau-dark-red focus-visible:ring-offset-2 focus-visible:outline-none',
             pathname === '/dashboard/settings'
               ? 'bg-ymau-dark-red/10 text-ymau-dark-red'
               : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
           )}
         >
-          <Settings className={cn(
-            'h-5 w-5',
-            pathname === '/dashboard/settings' ? 'text-ymau-dark-red' : 'text-gray-400'
-          )} />
+          <Settings
+            className={cn(
+              'h-5 w-5',
+              pathname === '/dashboard/settings' ? 'text-ymau-dark-red' : 'text-gray-400'
+            )}
+            aria-hidden="true"
+          />
           <span>Settings</span>
         </Link>
       </div>

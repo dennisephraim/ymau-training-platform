@@ -4,15 +4,12 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Users,
   Search,
-  Shield,
   ShieldCheck,
-  ShieldAlert,
   UserCheck,
   UserX,
   MoreVertical,
   GraduationCap,
   BookOpen,
-  ChevronDown,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -128,7 +125,7 @@ export default function ManageUsersPage() {
             View and manage user roles and permissions
           </p>
         </div>
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
             <Card key={i} className="animate-pulse">
               <CardContent className="py-6">
@@ -152,18 +149,18 @@ export default function ManageUsersPage() {
 
       {/* Platform Stats */}
       {stats && (
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
           <Card>
             <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Total Users</p>
-                  <p className="text-3xl font-bold text-gray-900">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-500 truncate">Total Users</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-900">
                     {stats.totalUsers}
                   </p>
                 </div>
-                <div className="p-3 bg-blue-100 rounded-full">
-                  <Users className="h-6 w-6 text-blue-600" />
+                <div className="p-2 sm:p-3 bg-blue-100 rounded-full shrink-0">
+                  <Users className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
                 </div>
               </div>
             </CardContent>
@@ -171,15 +168,15 @@ export default function ManageUsersPage() {
 
           <Card>
             <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Students</p>
-                  <p className="text-3xl font-bold text-gray-900">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-500 truncate">Students</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-900">
                     {stats.studentCount}
                   </p>
                 </div>
-                <div className="p-3 bg-green-100 rounded-full">
-                  <GraduationCap className="h-6 w-6 text-green-600" />
+                <div className="p-2 sm:p-3 bg-green-100 rounded-full shrink-0">
+                  <GraduationCap className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
                 </div>
               </div>
             </CardContent>
@@ -187,15 +184,15 @@ export default function ManageUsersPage() {
 
           <Card>
             <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Instructors</p>
-                  <p className="text-3xl font-bold text-gray-900">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-500 truncate">Instructors</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-900">
                     {stats.instructorCount}
                   </p>
                 </div>
-                <div className="p-3 bg-ymau-orange/20 rounded-full">
-                  <BookOpen className="h-6 w-6 text-ymau-orange" />
+                <div className="p-2 sm:p-3 bg-ymau-orange/20 rounded-full shrink-0">
+                  <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-ymau-orange" />
                 </div>
               </div>
             </CardContent>
@@ -203,15 +200,15 @@ export default function ManageUsersPage() {
 
           <Card>
             <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Admins</p>
-                  <p className="text-3xl font-bold text-gray-900">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-500 truncate">Admins</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-900">
                     {stats.adminCount}
                   </p>
                 </div>
-                <div className="p-3 bg-red-100 rounded-full">
-                  <ShieldCheck className="h-6 w-6 text-red-600" />
+                <div className="p-2 sm:p-3 bg-red-100 rounded-full shrink-0">
+                  <ShieldCheck className="h-5 w-5 sm:h-6 sm:w-6 text-red-600" />
                 </div>
               </div>
             </CardContent>
@@ -222,7 +219,7 @@ export default function ManageUsersPage() {
       {/* User List */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <CardTitle>All Users</CardTitle>
               <CardDescription>
@@ -232,9 +229,9 @@ export default function ManageUsersPage() {
           </div>
 
           {/* Filters */}
-          <div className="flex items-center space-x-4 mt-4">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center mt-4">
+            <div className="relative flex-1 sm:max-w-sm">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" aria-hidden="true" />
               <Input
                 placeholder="Search by name or email..."
                 value={searchQuery}
@@ -243,12 +240,12 @@ export default function ManageUsersPage() {
               />
             </div>
 
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-500">Role:</span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500 shrink-0">Role:</span>
               <select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value as UserRole | 'all')}
-                className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 sm:flex-none border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ymau-dark-red touch-action-manipulation"
               >
                 <option value="all">All Roles</option>
                 <option value="student">Students</option>
@@ -305,21 +302,21 @@ function UserRow({
       case 'admin':
         return (
           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-            <ShieldCheck className="h-3 w-3 mr-1" />
+            <ShieldCheck className="h-3 w-3 mr-1" aria-hidden="true" />
             Admin
           </span>
         );
       case 'instructor':
         return (
           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-ymau-orange/20 text-ymau-orange">
-            <BookOpen className="h-3 w-3 mr-1" />
+            <BookOpen className="h-3 w-3 mr-1" aria-hidden="true" />
             Instructor
           </span>
         );
       default:
         return (
           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-            <GraduationCap className="h-3 w-3 mr-1" />
+            <GraduationCap className="h-3 w-3 mr-1" aria-hidden="true" />
             Student
           </span>
         );
@@ -328,40 +325,40 @@ function UserRow({
 
   return (
     <div
-      className={`flex items-center justify-between p-4 rounded-lg border ${
+      className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border ${
         !user.isActive
           ? 'bg-gray-50 border-gray-200 opacity-60'
           : 'border-gray-200 hover:border-gray-300'
       } transition-colors`}
     >
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center gap-3 sm:gap-4 min-w-0">
         <Avatar
           src={user.photoURL}
           fallback={user.displayName || user.email}
           size="md"
         />
-        <div>
-          <div className="flex items-center space-x-2">
-            <p className="font-medium text-gray-900">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-medium text-gray-900 truncate">
               {user.displayName || 'No Name'}
             </p>
             {isCurrentUser && (
-              <span className="text-xs text-blue-600 font-medium">(You)</span>
+              <span className="text-xs text-blue-600 font-medium shrink-0">(You)</span>
             )}
             {!user.isActive && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-600">
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-600 shrink-0">
                 Inactive
               </span>
             )}
           </div>
-          <p className="text-sm text-gray-500">{user.email}</p>
+          <p className="text-sm text-gray-500 truncate">{user.email}</p>
           <p className="text-xs text-gray-400 mt-1">
             Joined {formatRelativeTime(user.createdAt)}
           </p>
         </div>
       </div>
 
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
         {getRoleBadge(user.role)}
 
         {/* Actions Menu */}
@@ -369,12 +366,13 @@ function UserRow({
           <div className="relative">
             <Button
               variant="outline"
-              size="sm"
+              size="icon"
               onClick={() => setShowMenu(!showMenu)}
               disabled={isLoading}
               isLoading={isLoading}
+              aria-label="User actions"
             >
-              <MoreVertical className="h-4 w-4" />
+              <MoreVertical className="h-4 w-4" aria-hidden="true" />
             </Button>
 
             {showMenu && (
@@ -394,9 +392,9 @@ function UserRow({
                           onRoleChange(user.id, 'student');
                           setShowMenu(false);
                         }}
-                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                        className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center touch-action-manipulation"
                       >
-                        <GraduationCap className="h-4 w-4 mr-2" />
+                        <GraduationCap className="h-4 w-4 mr-2" aria-hidden="true" />
                         Make Student
                       </button>
                     )}
@@ -406,9 +404,9 @@ function UserRow({
                           onRoleChange(user.id, 'instructor');
                           setShowMenu(false);
                         }}
-                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                        className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center touch-action-manipulation"
                       >
-                        <BookOpen className="h-4 w-4 mr-2" />
+                        <BookOpen className="h-4 w-4 mr-2" aria-hidden="true" />
                         Make Instructor
                       </button>
                     )}
@@ -418,9 +416,9 @@ function UserRow({
                           onRoleChange(user.id, 'admin');
                           setShowMenu(false);
                         }}
-                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                        className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center touch-action-manipulation"
                       >
-                        <ShieldCheck className="h-4 w-4 mr-2" />
+                        <ShieldCheck className="h-4 w-4 mr-2" aria-hidden="true" />
                         Make Admin
                       </button>
                     )}
@@ -436,9 +434,9 @@ function UserRow({
                           onStatusChange(user.id, false);
                           setShowMenu(false);
                         }}
-                        className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center"
+                        className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center touch-action-manipulation"
                       >
-                        <UserX className="h-4 w-4 mr-2" />
+                        <UserX className="h-4 w-4 mr-2" aria-hidden="true" />
                         Deactivate Account
                       </button>
                     ) : (
@@ -447,9 +445,9 @@ function UserRow({
                           onStatusChange(user.id, true);
                           setShowMenu(false);
                         }}
-                        className="w-full px-4 py-2 text-left text-sm text-green-600 hover:bg-green-50 flex items-center"
+                        className="w-full px-4 py-2.5 text-left text-sm text-green-600 hover:bg-green-50 flex items-center touch-action-manipulation"
                       >
-                        <UserCheck className="h-4 w-4 mr-2" />
+                        <UserCheck className="h-4 w-4 mr-2" aria-hidden="true" />
                         Activate Account
                       </button>
                     )}

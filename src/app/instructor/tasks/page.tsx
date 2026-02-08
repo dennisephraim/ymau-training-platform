@@ -30,12 +30,12 @@ export default function InstructorTasksPage() {
 
   const fetchTasks = useCallback(async () => {
     if (!user) return;
-    
+
     try {
       setLoading(true);
       // Use getInstructorTasks to get tasks where user is creator or co-instructor
       // Admins see all tasks
-      const data = user.role === 'admin' 
+      const data = user.role === 'admin'
         ? await taskService.getAllTasks()
         : await taskService.getInstructorTasks(user.id);
       setTasks(data);
@@ -85,14 +85,14 @@ export default function InstructorTasksPage() {
   if (loading) {
     return (
       <div className="space-y-6 animate-fade-in">
-        <div className="flex justify-between items-start">
+        <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start">
           <div className="space-y-2">
             <div className="h-8 bg-gray-200 rounded-lg w-48 animate-pulse"></div>
             <div className="h-4 bg-gray-200 rounded w-72 animate-pulse"></div>
           </div>
-          <div className="h-10 bg-gray-200 rounded-lg w-32 animate-pulse"></div>
+          <div className="h-10 bg-gray-200 rounded-lg w-full sm:w-32 animate-pulse"></div>
         </div>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="bg-white rounded-xl border border-gray-200 p-5 animate-pulse">
               <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
@@ -107,30 +107,30 @@ export default function InstructorTasksPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Tasks</h1>
           <p className="text-gray-500 mt-1">
             Create and manage tasks for delegates
           </p>
         </div>
-        <Link href="/instructor/tasks/new">
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
+        <Link href="/instructor/tasks/new" className="shrink-0">
+          <Button className="w-full sm:w-auto">
+            <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
             Create Task
           </Button>
         </Link>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-emerald-100">
-                <CheckCircle className="h-6 w-6 text-emerald-600" />
+              <div className="p-3 rounded-lg bg-emerald-100 shrink-0">
+                <CheckCircle className="h-6 w-6 text-emerald-600" aria-hidden="true" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-2xl font-bold text-gray-900">{publishedTasks.length}</p>
                 <p className="text-sm text-gray-500">Published Tasks</p>
               </div>
@@ -140,10 +140,10 @@ export default function InstructorTasksPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-gray-100">
-                <Clock className="h-6 w-6 text-gray-600" />
+              <div className="p-3 rounded-lg bg-gray-100 shrink-0">
+                <Clock className="h-6 w-6 text-gray-600" aria-hidden="true" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-2xl font-bold text-gray-900">{draftTasks.length}</p>
                 <p className="text-sm text-gray-500">Drafts</p>
               </div>
@@ -153,10 +153,10 @@ export default function InstructorTasksPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-red-100">
-                <AlertCircle className="h-6 w-6 text-red-600" />
+              <div className="p-3 rounded-lg bg-red-100 shrink-0">
+                <AlertCircle className="h-6 w-6 text-red-600" aria-hidden="true" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-2xl font-bold text-gray-900">{overdueTasks.length}</p>
                 <p className="text-sm text-gray-500">Past Due Date</p>
               </div>
@@ -176,7 +176,7 @@ export default function InstructorTasksPage() {
               action={
                 <Link href="/instructor/tasks/new">
                   <Button>
-                    <Plus className="h-4 w-4 mr-2" />
+                    <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
                     Create Task
                   </Button>
                 </Link>
@@ -188,8 +188,8 @@ export default function InstructorTasksPage() {
         <div className="space-y-4">
           {tasks.map((task) => (
             <Card key={task.id} className="hover:border-ymau-dark-red/30 transition-colors">
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between">
+              <CardContent className="p-4 sm:p-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
                       {task.isPublished ? (
@@ -199,7 +199,7 @@ export default function InstructorTasksPage() {
                       )}
                       {task.dueDate && isOverdue(task.dueDate) && task.isPublished && (
                         <Badge variant="warning" size="sm">
-                          <AlertCircle className="h-3 w-3" />
+                          <AlertCircle className="h-3 w-3" aria-hidden="true" />
                           Past Due
                         </Badge>
                       )}
@@ -215,18 +215,18 @@ export default function InstructorTasksPage() {
                     </p>
 
                     {/* Meta */}
-                    <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3 text-sm text-gray-500">
                       <span className="flex items-center gap-1">
-                        <FileText className="h-4 w-4" />
+                        <FileText className="h-4 w-4 shrink-0" aria-hidden="true" />
                         {task.questions.length} question{task.questions.length !== 1 ? 's' : ''}
                       </span>
                       <span className="flex items-center gap-1">
-                        <Users className="h-4 w-4" />
+                        <Users className="h-4 w-4 shrink-0" aria-hidden="true" />
                         {task.assignedRoles.join(', ')}
                       </span>
                       {task.dueDate && (
                         <span className={`flex items-center gap-1 ${isOverdue(task.dueDate) ? 'text-red-600' : ''}`}>
-                          <Calendar className="h-4 w-4" />
+                          <Calendar className="h-4 w-4 shrink-0" aria-hidden="true" />
                           {formatDate(task.dueDate)}
                         </span>
                       )}
@@ -234,16 +234,19 @@ export default function InstructorTasksPage() {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-2 ml-4">
+                  <div className="flex items-center gap-2 shrink-0">
                     <Link href={`/instructor/tasks/${task.id}/responses`}>
-                      <Button variant="ghost" size="sm">
-                        <Eye className="h-4 w-4 mr-1" />
+                      <Button variant="ghost" size="sm" className="hidden sm:inline-flex">
+                        <Eye className="h-4 w-4 mr-1" aria-hidden="true" />
                         Responses
+                      </Button>
+                      <Button variant="ghost" size="icon" className="sm:hidden" aria-label="View responses">
+                        <Eye className="h-4 w-4" aria-hidden="true" />
                       </Button>
                     </Link>
                     <Link href={`/instructor/tasks/${task.id}`}>
-                      <Button variant="ghost" size="icon">
-                        <Edit className="h-4 w-4" />
+                      <Button variant="ghost" size="icon" aria-label="Edit task">
+                        <Edit className="h-4 w-4" aria-hidden="true" />
                       </Button>
                     </Link>
                     <Button
@@ -251,8 +254,9 @@ export default function InstructorTasksPage() {
                       size="icon"
                       onClick={() => handleDelete(task.id)}
                       className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      aria-label="Delete task"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4" aria-hidden="true" />
                     </Button>
                   </div>
                 </div>

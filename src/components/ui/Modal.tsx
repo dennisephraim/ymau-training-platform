@@ -74,12 +74,14 @@ export function Modal({
     <div
       ref={overlayRef}
       onClick={handleOverlayClick}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-sm animate-fade-in overscroll-contain"
     >
       <div
         ref={contentRef}
         className={cn(
-          'relative w-full bg-white rounded-xl shadow-xl animate-slide-up',
+          'relative bg-white rounded-xl shadow-xl animate-slide-up',
+          'w-[calc(100vw-1.5rem)] sm:w-auto',
+          'max-h-[85vh] overflow-y-auto overscroll-contain',
           sizeClasses[size],
           className
         )}
@@ -90,8 +92,8 @@ export function Modal({
       >
         {/* Header */}
         {(title || showCloseButton) && (
-          <div className="flex items-start justify-between p-5 border-b border-gray-100">
-            <div>
+          <div className="sticky top-0 flex items-start justify-between p-4 sm:p-5 border-b border-gray-100 bg-white rounded-t-xl">
+            <div className="min-w-0 pr-2">
               {title && (
                 <h2 id="modal-title" className="text-lg font-semibold text-gray-900">
                   {title}
@@ -106,17 +108,22 @@ export function Modal({
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                className={cn(
+                  'min-h-[44px] min-w-[44px] -mr-2 -mt-2 flex items-center justify-center',
+                  'rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100',
+                  'transition-colors touch-action-manipulation',
+                  'focus-visible:ring-2 focus-visible:ring-ymau-dark-red focus-visible:ring-offset-2 focus-visible:outline-none'
+                )}
                 aria-label="Close modal"
               >
-                <X className="h-5 w-5" />
+                <X className="h-5 w-5" aria-hidden="true" />
               </button>
             )}
           </div>
         )}
 
         {/* Content */}
-        <div className="p-5">{children}</div>
+        <div className="p-4 sm:p-5">{children}</div>
       </div>
     </div>
   );
@@ -154,9 +161,9 @@ export function ConfirmDialog({
   isLoading = false,
 }: ConfirmDialogProps) {
   const variantClasses = {
-    danger: 'bg-red-600 hover:bg-red-700 focus:ring-red-500',
-    warning: 'bg-amber-600 hover:bg-amber-700 focus:ring-amber-500',
-    info: 'bg-ymau-dark-red hover:bg-ymau-dark-red/90 focus:ring-ymau-dark-red',
+    danger: 'bg-red-600 hover:bg-red-700 focus-visible:ring-red-500',
+    warning: 'bg-amber-600 hover:bg-amber-700 focus-visible:ring-amber-500',
+    info: 'bg-ymau-dark-red hover:bg-ymau-dark-red/90 focus-visible:ring-ymau-dark-red',
   };
 
   return (
@@ -171,11 +178,17 @@ export function ConfirmDialog({
       <div className="text-center">
         <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
         <p className="text-gray-600 mb-6">{message}</p>
-        <div className="flex items-center justify-center gap-3">
+        <div className="flex flex-col-reverse sm:flex-row items-center justify-center gap-3">
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 transition-colors"
+            className={cn(
+              'w-full sm:w-auto px-4 py-2.5 text-sm font-medium text-gray-700',
+              'bg-white border border-gray-300 rounded-lg',
+              'hover:bg-gray-50 transition-colors touch-action-manipulation',
+              'focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-500 focus-visible:outline-none',
+              'disabled:opacity-50'
+            )}
           >
             {cancelText}
           </button>
@@ -183,13 +196,16 @@ export function ConfirmDialog({
             onClick={onConfirm}
             disabled={isLoading}
             className={cn(
-              'px-4 py-2 text-sm font-medium text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 transition-colors',
+              'w-full sm:w-auto px-4 py-2.5 text-sm font-medium text-white rounded-lg',
+              'transition-colors touch-action-manipulation',
+              'focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+              'disabled:opacity-50',
               variantClasses[variant]
             )}
           >
             {isLoading ? (
-              <span className="flex items-center gap-2">
-                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
                   <circle
                     className="opacity-25"
                     cx="12"

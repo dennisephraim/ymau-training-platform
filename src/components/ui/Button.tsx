@@ -11,22 +11,29 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', isLoading, disabled, children, ...props }, ref) => {
-    const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]';
+    const baseStyles = cn(
+      'inline-flex items-center justify-center font-medium rounded-lg',
+      'transition-all duration-200 touch-action-manipulation',
+      'focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+      'disabled:opacity-50 disabled:cursor-not-allowed',
+      'active:scale-[0.98]'
+    );
 
     const variants = {
-      primary: 'bg-ymau-dark-red text-white hover:bg-ymau-dark-red/90 focus:ring-ymau-dark-red shadow-sm hover:shadow',
-      secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200 focus:ring-gray-500',
-      outline: 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 focus:ring-ymau-dark-red',
-      ghost: 'bg-transparent text-gray-700 hover:bg-gray-100 focus:ring-gray-500',
-      danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 shadow-sm',
-      success: 'bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500 shadow-sm',
+      primary: 'bg-ymau-dark-red text-white hover:bg-ymau-dark-red/90 focus-visible:ring-ymau-dark-red shadow-sm hover:shadow',
+      secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200 focus-visible:ring-gray-500',
+      outline: 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 focus-visible:ring-ymau-dark-red',
+      ghost: 'bg-transparent text-gray-700 hover:bg-gray-100 focus-visible:ring-gray-500',
+      danger: 'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500 shadow-sm',
+      success: 'bg-emerald-600 text-white hover:bg-emerald-700 focus-visible:ring-emerald-500 shadow-sm',
     };
 
     const sizes = {
       sm: 'px-3 py-1.5 text-sm gap-1.5',
       md: 'px-4 py-2 text-sm gap-2',
       lg: 'px-6 py-3 text-base gap-2',
-      icon: 'p-2',
+      // Touch-friendly icon size (44x44px minimum)
+      icon: 'p-2 min-h-[44px] min-w-[44px]',
     };
 
     return (
@@ -43,6 +50,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
+              aria-hidden="true"
             >
               <circle
                 className="opacity-25"
