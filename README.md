@@ -1,6 +1,6 @@
 # YMAU Training Platform
 
-A modern video-based training platform built for the Yale Model African Union (YMAU), designed to deliver structured online courses with enforced completion tracking and certificate generation.
+A modern video-based training platform built for the Yale Model African Union (YMAU), designed to deliver structured online courses with enforced completion tracking, assessments, and certificate generation.
 
 ---
 
@@ -15,6 +15,7 @@ Traditional online courses face a common issue: students skip through videos to 
 - **Blocking fast-forward** until content has been watched
 - **Tracking watched segments** (not just "video opened")
 - **Requiring 95% completion** before marking chapters as done
+- **Component-based progress** combining videos and quizzes
 - **Generating verified certificates** only after genuine completion
 
 ---
@@ -25,16 +26,24 @@ Traditional online courses face a common issue: students skip through videos to 
 - Browse and enroll in available courses
 - Watch video chapters with progress tracking
 - Resume exactly where you left off
+- Take chapter quizzes with immediate feedback
+- Submit tasks and assignments
+- Access learning resources
 - Earn certificates upon course completion
 - View progress across all enrolled courses
 
 ### For Instructors
 - Create courses with multiple video chapters
 - Upload videos directly to cloud storage
+- Create quizzes with configurable settings (passing scores, time limits, attempt limits)
+- Create and grade student tasks/assignments
+- Upload learning resources and materials
 - Manage course iterations (semesters/cohorts)
 - Generate enrollment codes for easy student access
 - Approve/reject enrollment requests
 - Track individual student progress
+- View course analytics and engagement metrics
+- Bulk download student attachments as ZIP files
 
 ### For Administrators
 - View platform-wide statistics (users, courses, enrollments)
@@ -49,11 +58,12 @@ Traditional online courses face a common issue: students skip through videos to 
 
 | Layer | Technology | Purpose |
 |-------|------------|---------|
-| **Frontend** | Next.js 16 | React framework with App Router |
-| **Language** | TypeScript | Type-safe development |
-| **Styling** | Tailwind CSS | Utility-first CSS framework |
+| **Frontend** | Next.js 16 + React 19 | React framework with App Router |
+| **Language** | TypeScript | Type-safe development (strict mode) |
+| **Styling** | Tailwind CSS 4 | Utility-first CSS framework |
+| **UI Components** | Radix UI | Accessible component primitives |
 | **Authentication** | Firebase Auth | Google OAuth sign-in |
-| **Database** | Cloud Firestore | NoSQL document database |
+| **Database** | Cloud Firestore | NoSQL document database (direct SDK) |
 | **Storage** | Firebase Storage | Video and file storage |
 | **Video Player** | Video.js | Custom player with seek controls |
 | **PDF Generation** | @react-pdf/renderer | Certificate PDF creation |
@@ -69,10 +79,12 @@ Course (e.g., "Delegate Training 2026")
 ├── Iteration (e.g., "Fall 2026", "Spring 2027")
 │   ├── Enrolled Students
 │   └── Enrollment Codes
-└── Chapters (ordered videos)
-    ├── Chapter 1: "Introduction" (15 min)
-    ├── Chapter 2: "Procedures" (20 min)
-    └── Chapter 3: "Best Practices" (25 min)
+├── Chapters (ordered videos + quizzes)
+│   ├── Chapter 1: "Introduction" (15 min video + quiz)
+│   ├── Chapter 2: "Procedures" (20 min video)
+│   └── Chapter 3: "Best Practices" (25 min video + quiz)
+├── Tasks (assignments with submissions)
+└── Resources (learning materials)
 ```
 
 ### Progress Tracking
@@ -80,9 +92,26 @@ Course (e.g., "Delegate Training 2026")
 The platform uses **segment-based tracking** to ensure genuine video consumption:
 
 1. **Watched Segments**: Records time ranges (e.g., 0:00-5:30, 7:00-12:00)
-2. **Merge Algorithm**: Combines overlapping segments intelligently
+2. **Merge Algorithm**: Combines overlapping segments with 2-second tolerance
 3. **Seek Prevention**: Can only skip to previously watched portions
 4. **95% Threshold**: Chapters marked complete at 95% coverage
+
+### Quiz System
+
+Comprehensive assessment capabilities:
+- **Question Types**: Multiple choice, true/false, multiple select
+- **Configurable Settings**: Passing scores, attempt limits, time limits
+- **Question Pools**: Random sampling and shuffling for variety
+- **Detailed Feedback**: Explanations for correct/incorrect answers
+- **Progress Integration**: Quiz completion counts toward chapter progress
+
+### Task System
+
+Assignment and submission management:
+- **Response Types**: Text, file uploads, or both
+- **Multi-Question Tasks**: Multiple prompts per assignment
+- **Due Dates**: Optional deadlines for submissions
+- **Instructor Grading**: Review and grade student work
 
 ### Enrollment Methods
 
@@ -101,36 +130,60 @@ Upon completing all chapters of a course:
 
 ---
 
-## Project Structure
+## Architecture
+
+### Service Layer Pattern
+
+All database operations go through service modules in `/lib/services/`. The platform uses Firestore client SDK directly with no REST API backend layer.
+
+Key services:
+- `courses.ts` - Course and chapter CRUD
+- `enrollments.ts` - Enrollment management
+- `progress.ts` - Video segment tracking with merge algorithm
+- `certificates.ts` - PDF generation and verification codes
+- `quizzes.ts` - Quiz management and attempt tracking
+- `tasks.ts` - Task creation and submission handling
+- `users.ts` - User profile and role management
+
+### Project Structure
 
 ```
 ymau-training-platform/
 ├── src/
 │   ├── app/                    # Next.js App Router pages
+│   │   ├── api/                # API routes
+│   │   │   └── bulk-download/  # ZIP file generation
 │   │   ├── dashboard/          # Student pages
 │   │   │   ├── courses/        # Enrolled courses & viewer
 │   │   │   ├── certificates/   # View & download certificates
 │   │   │   ├── browse/         # Browse available courses
+│   │   │   ├── tasks/          # Task submissions
+│   │   │   ├── resources/      # Learning materials
 │   │   │   └── enroll/         # Join via code
 │   │   ├── instructor/         # Instructor pages
-│   │   │   └── courses/        # Course management
+│   │   │   ├── courses/        # Course management
+│   │   │   ├── tasks/          # Task creation & grading
+│   │   │   └── analytics/      # Course analytics
 │   │   ├── admin/              # Admin pages
 │   │   ├── verify/[code]/      # Public certificate verification
 │   │   └── login/              # Authentication
 │   ├── components/
 │   │   ├── ui/                 # Reusable UI components
 │   │   ├── video/              # Video player components
+│   │   ├── quiz/               # Quiz player components
 │   │   ├── certificates/       # Certificate PDF & generation
 │   │   ├── auth/               # Authentication context
 │   │   ├── courses/            # Course-related components
 │   │   └── layout/             # Layout components
 │   ├── lib/
 │   │   ├── firebase/           # Firebase configuration
-│   │   ├── services/           # Business logic & API calls
+│   │   ├── services/           # Business logic (Firestore operations)
 │   │   ├── hooks/              # Custom React hooks
-│   │   └── utils/              # Utility functions
+│   │   └── utils/              # Utility functions (cn(), formatters)
 │   └── types/                  # TypeScript type definitions
 ├── public/                     # Static assets
+├── firestore.rules             # Firestore security rules
+├── storage.rules               # Storage security rules
 ├── package.json
 └── README.md
 ```
@@ -141,7 +194,7 @@ ymau-training-platform/
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20+
 - npm or yarn
 - Firebase project with Firestore, Auth, and Storage enabled
 
@@ -161,6 +214,15 @@ cp .env.local.example .env.local
 
 # Run development server
 npm run dev
+```
+
+### Development Commands
+
+```bash
+npm run dev       # Start Next.js dev server on port 3000
+npm run build     # Production build
+npm run lint      # Run ESLint
+npm start         # Start production server
 ```
 
 ### Environment Variables
@@ -184,8 +246,8 @@ NEXT_PUBLIC_BASE_URL=http://localhost:3000
 
 | Role | Access Level |
 |------|--------------|
-| **Student** | Enroll in courses, watch videos, earn certificates |
-| **Instructor** | All student abilities + create/manage courses |
+| **Student** | Enroll in courses, watch videos, take quizzes, submit tasks, earn certificates |
+| **Instructor** | All student abilities + create/manage courses, quizzes, tasks, and resources |
 | **Admin** | All instructor abilities + manage users/roles |
 
 New users automatically receive the "student" role. Admins can promote users to instructors through the user management interface.
@@ -196,15 +258,15 @@ New users automatically receive the "student" role. Admins can promote users to 
 
 - **Google OAuth** for secure authentication
 - **Role-based access control** on all routes
-- **Server-side validation** of progress updates
-- **Signed URLs** for video access (coming soon)
 - **Firestore security rules** for data protection
+- **Storage security rules** for file access control
+- **Server-side validation** of progress updates
 
 ---
 
 ## Development Status
 
-This project is under active development. See [CHANGELOG.md](./CHANGELOG.md) for detailed progress on each phase.
+This project is under active development. See [CHANGELOG.md](./CHANGELOG.md) for detailed progress.
 
 | Phase | Status | Description |
 |-------|--------|-------------|
@@ -214,12 +276,12 @@ This project is under active development. See [CHANGELOG.md](./CHANGELOG.md) for
 | Phase 4: Video Player | Complete | Custom player, progress tracking |
 | Phase 5: Certificates | Complete | Auto-generation, QR codes, verification |
 | Phase 6: Analytics & Admin | Complete | Dashboards, user management, role control |
+| Phase 7: Quizzes & Tasks | Complete | Assessments, assignments, grading |
 
----
-
-## Screenshots
-
-*Screenshots will be added as the UI is finalized.*
+### Recent Enhancements (Feb 2026)
+- Bulk download attachments feature
+- Improved mobile view
+- Enhanced video progress tracking
 
 ---
 
