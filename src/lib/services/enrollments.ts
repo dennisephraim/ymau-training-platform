@@ -19,7 +19,6 @@ import {
   EnrollmentDocument,
   EnrollmentRequest,
   EnrollmentRequestDocument,
-  EnrollmentCode,
 } from '@/types/enrollment';
 import { getEnrollmentCodeByCode } from './enrollmentCodes';
 
@@ -44,8 +43,8 @@ export async function getEnrollment(enrollmentId: string): Promise<Enrollment | 
   return {
     id: snapshot.id,
     ...data,
-    enrolledAt: toDate(data.enrolledAt as any) || new Date(),
-    completedAt: toDate(data.completedAt as any),
+    enrolledAt: toDate(data.enrolledAt as Timestamp | Date) || new Date(),
+    completedAt: toDate(data.completedAt as Timestamp | Date),
   };
 }
 
@@ -79,8 +78,8 @@ export async function getUserEnrollments(userId: string): Promise<Enrollment[]> 
     return {
       id: doc.id,
       ...data,
-      enrolledAt: toDate(data.enrolledAt as any) || new Date(),
-      completedAt: toDate(data.completedAt as any),
+      enrolledAt: toDate(data.enrolledAt as Timestamp | Date) || new Date(),
+      completedAt: toDate(data.completedAt as Timestamp | Date),
     };
   });
 }
@@ -101,8 +100,8 @@ export async function getCourseEnrollments(courseId: string): Promise<Enrollment
     return {
       id: doc.id,
       ...data,
-      enrolledAt: toDate(data.enrolledAt as any) || new Date(),
-      completedAt: toDate(data.completedAt as any),
+      enrolledAt: toDate(data.enrolledAt as Timestamp | Date) || new Date(),
+      completedAt: toDate(data.completedAt as Timestamp | Date),
     };
   });
 }
@@ -128,8 +127,8 @@ export async function checkExistingEnrollment(
   return {
     id: docSnap.id,
     ...data,
-    enrolledAt: toDate(data.enrolledAt as any) || new Date(),
-    completedAt: toDate(data.completedAt as any),
+    enrolledAt: toDate(data.enrolledAt as Timestamp | Date) || new Date(),
+    completedAt: toDate(data.completedAt as Timestamp | Date),
   };
 }
 
@@ -332,8 +331,8 @@ export async function getPendingRequest(
   return {
     id: docSnap.id,
     ...data,
-    requestedAt: toDate(data.requestedAt as any) || new Date(),
-    reviewedAt: toDate(data.reviewedAt as any),
+    requestedAt: toDate(data.requestedAt as Timestamp | Date) || new Date(),
+    reviewedAt: toDate(data.reviewedAt as Timestamp | Date),
   };
 }
 
@@ -354,8 +353,8 @@ export async function getCourseRequests(courseId: string): Promise<EnrollmentReq
     return {
       id: docSnap.id,
       ...data,
-      requestedAt: toDate(data.requestedAt as any) || new Date(),
-      reviewedAt: toDate(data.reviewedAt as any),
+      requestedAt: toDate(data.requestedAt as Timestamp | Date) || new Date(),
+      reviewedAt: toDate(data.reviewedAt as Timestamp | Date),
     };
   });
 }

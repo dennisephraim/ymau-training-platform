@@ -556,8 +556,8 @@ function AddStudentModal({
     try {
       await enrollmentService.createDirectEnrollment(courseId, studentId, enrolledBy);
       onAdded();
-    } catch (err: any) {
-      setError(err.message || 'Failed to add student');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add student');
       setAdding(null);
     }
   };

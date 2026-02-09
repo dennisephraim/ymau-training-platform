@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { WatchedSegment, ChapterProgress } from '@/types/progress';
+import { WatchedSegment } from '@/types/progress';
 import {
   getChapterProgress,
   saveChapterProgress,
@@ -53,7 +53,6 @@ export function useVideoProgress({
   const pendingSegmentsRef = useRef<WatchedSegment[]>([]);
   const pendingPositionRef = useRef<number>(0);
   const pendingMaxWatchedRef = useRef<number>(0);
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedRef = useRef<number>(Date.now());
 
   // Calculate watched percentage

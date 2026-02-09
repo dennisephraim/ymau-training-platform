@@ -5,11 +5,9 @@ import { User } from '@/types/user';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import * as userService from '@/lib/services/users';
 import {
-  Plus,
   X,
   Search,
   UserPlus,

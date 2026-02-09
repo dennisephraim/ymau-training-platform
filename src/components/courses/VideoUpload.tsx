@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Upload, X, CheckCircle, AlertCircle, Video } from 'lucide-react';
+import { Upload, CheckCircle, AlertCircle, Video } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { uploadVideo, UploadProgress } from '@/lib/services/storage';
 import * as courseService from '@/lib/services/courses';

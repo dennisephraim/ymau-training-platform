@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthContext';
 import { InstructorPicker } from '@/components/courses/InstructorPicker';
-import { Task, TaskQuestion, QuestionResponseType } from '@/types/task';
+import { TaskQuestion, QuestionResponseType } from '@/types/task';
 import { UserRole } from '@/types/user';
 import * as taskService from '@/lib/services/tasks';
 

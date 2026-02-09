@@ -1,9 +1,9 @@
 'use client';
 
-import { use, useState, useEffect, useRef } from 'react';
+import { use, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Plus, GripVertical, Edit, Trash2, Video, Clock, HelpCircle, CheckCircle, ChevronDown, ChevronUp, Loader2, FileText } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
+import { ArrowLeft, Plus, GripVertical, Edit, Trash2, Video, Clock, HelpCircle, CheckCircle, ChevronUp, Loader2, FileText } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
@@ -100,7 +100,7 @@ export default function ChaptersPage({ params }: { params: Promise<{ courseId: s
           courseId={courseId}
           order={course.chapters.length}
           onClose={() => setShowAddForm(false)}
-          onSaved={(newChapterId) => {
+          onSaved={() => {
             setShowAddForm(false);
             refetch();
           }}
@@ -666,7 +666,7 @@ function ChapterForm({
                   <div>
                     <p className="text-sm font-medium text-gray-700">Quiz Available After Creation</p>
                     <p className="text-xs text-gray-500">
-                      Save this chapter first, then you can add quiz questions by clicking "Edit Quiz"
+                      Save this chapter first, then you can add quiz questions by clicking &quot;Edit Quiz&quot;
                     </p>
                   </div>
                 </div>

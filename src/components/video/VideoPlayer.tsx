@@ -88,6 +88,7 @@ export function VideoPlayer({
         }
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- maxWatched read only for comparison, shouldn't trigger re-run
   }, [initialMaxWatched, initiallyCompleted]);
 
   // Sync watchedSegments when initialSegments prop changes (from async load)
@@ -96,6 +97,7 @@ export function VideoPlayer({
       setWatchedSegments(initialSegments);
       watchedSegmentsRef.current = initialSegments;
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- watchedSegments.length read only for initial check, shouldn't trigger re-run
   }, [initialSegments]);
 
   // Track the last known time to detect seeks vs natural playback
@@ -308,6 +310,7 @@ export function VideoPlayer({
         playerRef.current = null;
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally only re-run when src changes, other deps are accessed via refs
   }, [src]);
 
   return (

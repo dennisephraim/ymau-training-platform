@@ -1,9 +1,7 @@
 import {
   BookOpen,
-  GraduationCap,
   Award,
   Users,
-  Settings,
   BarChart3,
   LayoutDashboard,
   FolderOpen,

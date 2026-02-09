@@ -20,7 +20,6 @@ import {
   CertificateTemplateDocument,
   VerificationResult,
 } from '@/types/certificate';
-import { nanoid } from 'nanoid';
 import QRCode from 'qrcode';
 
 // Helper to convert Firestore timestamps to Date
@@ -159,8 +158,8 @@ export async function getCertificate(certificateId: string): Promise<Certificate
   return {
     id: snapshot.id,
     ...data,
-    issuedAt: toDate(data.issuedAt as any),
-    expiresAt: data.expiresAt ? toDate(data.expiresAt as any) : null,
+    issuedAt: toDate(data.issuedAt as Timestamp | Date),
+    expiresAt: data.expiresAt ? toDate(data.expiresAt as Timestamp | Date) : null,
   };
 }
 
@@ -183,8 +182,8 @@ export async function getCertificateByEnrollment(
   return {
     id: doc.id,
     ...data,
-    issuedAt: toDate(data.issuedAt as any),
-    expiresAt: data.expiresAt ? toDate(data.expiresAt as any) : null,
+    issuedAt: toDate(data.issuedAt as Timestamp | Date),
+    expiresAt: data.expiresAt ? toDate(data.expiresAt as Timestamp | Date) : null,
   };
 }
 
@@ -207,8 +206,8 @@ export async function getStudentCertificates(studentId: string): Promise<Certifi
     return {
       id: doc.id,
       ...data,
-      issuedAt: toDate(data.issuedAt as any),
-      expiresAt: data.expiresAt ? toDate(data.expiresAt as any) : null,
+      issuedAt: toDate(data.issuedAt as Timestamp | Date),
+      expiresAt: data.expiresAt ? toDate(data.expiresAt as Timestamp | Date) : null,
     };
   });
 }
@@ -232,8 +231,8 @@ export async function getCourseCertificates(courseId: string): Promise<Certifica
     return {
       id: doc.id,
       ...data,
-      issuedAt: toDate(data.issuedAt as any),
-      expiresAt: data.expiresAt ? toDate(data.expiresAt as any) : null,
+      issuedAt: toDate(data.issuedAt as Timestamp | Date),
+      expiresAt: data.expiresAt ? toDate(data.expiresAt as Timestamp | Date) : null,
     };
   });
 }
@@ -266,8 +265,8 @@ export async function verifyCertificate(
     const certificate: Certificate = {
       id: doc.id,
       ...data,
-      issuedAt: toDate(data.issuedAt as any),
-      expiresAt: data.expiresAt ? toDate(data.expiresAt as any) : null,
+      issuedAt: toDate(data.issuedAt as Timestamp | Date),
+      expiresAt: data.expiresAt ? toDate(data.expiresAt as Timestamp | Date) : null,
     };
 
     // Check if certificate has expired
@@ -318,8 +317,8 @@ export async function getCourseTemplate(
   return {
     id: doc.id,
     ...data,
-    createdAt: toDate(data.createdAt as any),
-    updatedAt: toDate(data.updatedAt as any),
+    createdAt: toDate(data.createdAt as Timestamp | Date),
+    updatedAt: toDate(data.updatedAt as Timestamp | Date),
   };
 }
 

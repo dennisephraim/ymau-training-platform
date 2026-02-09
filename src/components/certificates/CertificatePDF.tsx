@@ -7,7 +7,6 @@ import {
   View,
   StyleSheet,
   Image,
-  Font,
 } from '@react-pdf/renderer';
 
 // Register fonts (using system fonts for now)
@@ -224,7 +223,9 @@ export function CertificatePDF({ data }: { data: CertificateData }) {
           <View style={[styles.decorativeCorner, styles.bottomRight]} />
 
           {/* Logo in top corners */}
+          {/* eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf/renderer Image doesn't support alt */}
           <Image style={styles.logoTopLeft} src="/YMAU Crest.png" />
+          {/* eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf/renderer Image doesn't support alt */}
           <Image style={styles.logoTopRight} src="/YMAU Crest.png" />
 
           {/* Header */}
@@ -256,6 +257,7 @@ export function CertificatePDF({ data }: { data: CertificateData }) {
             {/* QR Code Section */}
             <View style={styles.qrSection}>
               {data.qrCodeDataUrl && (
+                // eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf/renderer Image doesn't support alt
                 <Image style={styles.qrCode} src={data.qrCodeDataUrl} />
               )}
               <Text style={styles.verificationCode}>{data.verificationCode}</Text>

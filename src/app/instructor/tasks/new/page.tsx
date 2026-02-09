@@ -12,7 +12,6 @@ import {
   Plus,
   Trash2,
   GripVertical,
-  Save,
   ClipboardList,
   Calendar,
   Users,
@@ -43,7 +42,6 @@ export default function NewTaskPage() {
   const [assignedRoles, setAssignedRoles] = useState<UserRole[]>(['student']);
   const [dueDate, setDueDate] = useState('');
   const [instructorIds, setInstructorIds] = useState<string[]>([]);
-  const [isPublished, setIsPublished] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

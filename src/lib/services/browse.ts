@@ -39,10 +39,10 @@ export async function getPublishedCourses(): Promise<BrowsableCourse[]> {
     return {
       id: courseDoc.id,
       ...courseData,
-      createdAt: toDate(courseData.createdAt as any) || new Date(),
-      updatedAt: toDate(courseData.updatedAt as any) || new Date(),
-      startDate: toDate(courseData.startDate as any),
-      endDate: toDate(courseData.endDate as any),
+      createdAt: toDate(courseData.createdAt as Timestamp | Date) || new Date(),
+      updatedAt: toDate(courseData.updatedAt as Timestamp | Date) || new Date(),
+      startDate: toDate(courseData.startDate as Timestamp | Date),
+      endDate: toDate(courseData.endDate as Timestamp | Date),
     };
   });
 
@@ -68,10 +68,10 @@ export async function getAllPublishedCourses(): Promise<BrowsableCourse[]> {
     return {
       id: courseDoc.id,
       ...courseData,
-      createdAt: toDate(courseData.createdAt as any) || new Date(),
-      updatedAt: toDate(courseData.updatedAt as any) || new Date(),
-      startDate: toDate(courseData.startDate as any),
-      endDate: toDate(courseData.endDate as any),
+      createdAt: toDate(courseData.createdAt as Timestamp | Date) || new Date(),
+      updatedAt: toDate(courseData.updatedAt as Timestamp | Date) || new Date(),
+      startDate: toDate(courseData.startDate as Timestamp | Date),
+      endDate: toDate(courseData.endDate as Timestamp | Date),
     };
   });
 

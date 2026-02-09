@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
   CheckCircle,
   XCircle,
   Clock,
-  AlertCircle,
   ChevronRight,
   RotateCcw,
   Trophy,
@@ -88,6 +87,7 @@ export function ChapterQuizPlayer({
     }, 1000);
 
     return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- handleSubmit is stable and would cause issues if added
   }, [state, startTime, quiz.settings.timeLimit]);
 
   const startQuiz = async () => {

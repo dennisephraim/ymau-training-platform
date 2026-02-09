@@ -16,7 +16,6 @@ import { db } from '@/lib/firebase/config';
 import {
   Task,
   TaskDocument,
-  TaskQuestion,
   TaskResponse,
   TaskResponseDocument,
   TaskResponseAnswer,
@@ -49,9 +48,9 @@ export async function getAllTasks(): Promise<Task[]> {
       id: doc.id,
       ...data,
       instructorIds: data.instructorIds || [],
-      dueDate: data.dueDate ? toDate(data.dueDate as any) : null,
-      createdAt: toDate(data.createdAt as any),
-      updatedAt: toDate(data.updatedAt as any),
+      dueDate: data.dueDate ? toDate(data.dueDate as Timestamp | Date) : null,
+      createdAt: toDate(data.createdAt as Timestamp | Date),
+      updatedAt: toDate(data.updatedAt as Timestamp | Date),
     };
   });
 }
@@ -77,9 +76,9 @@ export async function getTasksByRole(role: UserRole): Promise<Task[]> {
       id: doc.id,
       ...data,
       instructorIds: data.instructorIds || [],
-      dueDate: data.dueDate ? toDate(data.dueDate as any) : null,
-      createdAt: toDate(data.createdAt as any),
-      updatedAt: toDate(data.updatedAt as any),
+      dueDate: data.dueDate ? toDate(data.dueDate as Timestamp | Date) : null,
+      createdAt: toDate(data.createdAt as Timestamp | Date),
+      updatedAt: toDate(data.updatedAt as Timestamp | Date),
     };
   });
 }
@@ -125,9 +124,9 @@ export async function getTask(taskId: string): Promise<Task | null> {
     id: snapshot.id,
     ...data,
     instructorIds: data.instructorIds || [],
-    dueDate: data.dueDate ? toDate(data.dueDate as any) : null,
-    createdAt: toDate(data.createdAt as any),
-    updatedAt: toDate(data.updatedAt as any),
+    dueDate: data.dueDate ? toDate(data.dueDate as Timestamp | Date) : null,
+    createdAt: toDate(data.createdAt as Timestamp | Date),
+    updatedAt: toDate(data.updatedAt as Timestamp | Date),
   };
 }
 
@@ -188,9 +187,9 @@ export async function getInstructorTasks(instructorId: string): Promise<Task[]> 
           id: doc.id,
           ...data,
           instructorIds: data.instructorIds || [],
-          dueDate: data.dueDate ? toDate(data.dueDate as any) : null,
-          createdAt: toDate(data.createdAt as any),
-          updatedAt: toDate(data.updatedAt as any),
+          dueDate: data.dueDate ? toDate(data.dueDate as Timestamp | Date) : null,
+          createdAt: toDate(data.createdAt as Timestamp | Date),
+          updatedAt: toDate(data.updatedAt as Timestamp | Date),
         });
       }
     });
@@ -259,7 +258,7 @@ export async function getTaskResponses(taskId: string): Promise<TaskResponse[]> 
     return {
       id: doc.id,
       ...data,
-      submittedAt: toDate(data.submittedAt as any),
+      submittedAt: toDate(data.submittedAt as Timestamp | Date),
     };
   });
 }
@@ -279,7 +278,7 @@ export async function getUserTaskResponses(userId: string): Promise<TaskResponse
     return {
       id: doc.id,
       ...data,
-      submittedAt: toDate(data.submittedAt as any),
+      submittedAt: toDate(data.submittedAt as Timestamp | Date),
     };
   });
 }
@@ -308,7 +307,7 @@ export async function getUserTaskResponse(
   return {
     id: doc.id,
     ...data,
-    submittedAt: toDate(data.submittedAt as any),
+    submittedAt: toDate(data.submittedAt as Timestamp | Date),
   };
 }
 

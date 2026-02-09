@@ -303,7 +303,6 @@ export async function uploadResourceFile(
     throw new Error('File must be less than 100MB');
   }
 
-  const extension = file.name.split('.').pop();
   const safeFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
   const storagePath = `resources/${resourceId}/${safeFileName}`;
   const storageRef = ref(storage, storagePath);

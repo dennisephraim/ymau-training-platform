@@ -44,8 +44,8 @@ export async function getCourses(): Promise<Course[]> {
       id: doc.id,
       ...data,
       instructorIds: data.instructorIds || [],
-      createdAt: toDate(data.createdAt as any),
-      updatedAt: toDate(data.updatedAt as any),
+      createdAt: toDate(data.createdAt as Timestamp | Date),
+      updatedAt: toDate(data.updatedAt as Timestamp | Date),
     };
   });
 }
@@ -63,8 +63,8 @@ export async function getCourse(courseId: string): Promise<Course | null> {
     id: snapshot.id,
     ...data,
     instructorIds: data.instructorIds || [],
-    createdAt: toDate(data.createdAt as any),
-    updatedAt: toDate(data.updatedAt as any),
+    createdAt: toDate(data.createdAt as Timestamp | Date),
+    updatedAt: toDate(data.updatedAt as Timestamp | Date),
   };
 }
 
@@ -106,8 +106,8 @@ export async function getInstructorCourses(instructorId: string): Promise<Course
           id: doc.id,
           ...data,
           instructorIds: data.instructorIds || [],
-          createdAt: toDate(data.createdAt as any),
-          updatedAt: toDate(data.updatedAt as any),
+          createdAt: toDate(data.createdAt as Timestamp | Date),
+          updatedAt: toDate(data.updatedAt as Timestamp | Date),
         });
       }
     });
@@ -237,8 +237,8 @@ export async function getChapters(courseId: string): Promise<Chapter[]> {
       id: doc.id,
       courseId,
       ...data,
-      createdAt: toDate(data.createdAt as any),
-      updatedAt: toDate(data.updatedAt as any),
+      createdAt: toDate(data.createdAt as Timestamp | Date),
+      updatedAt: toDate(data.updatedAt as Timestamp | Date),
     };
   });
 }
@@ -256,8 +256,8 @@ export async function getChapter(courseId: string, chapterId: string): Promise<C
     id: snapshot.id,
     courseId,
     ...data,
-    createdAt: toDate(data.createdAt as any),
-    updatedAt: toDate(data.updatedAt as any),
+    createdAt: toDate(data.createdAt as Timestamp | Date),
+    updatedAt: toDate(data.updatedAt as Timestamp | Date),
   };
 }
 

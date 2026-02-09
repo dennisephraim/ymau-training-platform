@@ -1,16 +1,16 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Modal } from '@/components/ui/Modal';
 import {
   ArrowLeft,
   ClipboardList,
-  User,
   Calendar,
   FileText,
   Download,
@@ -18,10 +18,14 @@ import {
   Loader2,
   ChevronDown,
   ChevronUp,
+  AlertCircle,
+  X,
 } from 'lucide-react';
 import { Task, TaskResponse } from '@/types/task';
 import * as taskService from '@/lib/services/tasks';
 import * as userService from '@/lib/services/users';
+import { useBulkDownload } from '@/lib/hooks/useBulkDownload';
+import { FileToDownload } from '@/lib/utils/bulkDownload';
 
 interface ResponseWithUser extends TaskResponse {
   userName: string;
@@ -36,6 +40,37 @@ export default function TaskResponsesPage() {
   const [responses, setResponses] = useState<ResponseWithUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedResponse, setExpandedResponse] = useState<string | null>(null);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+
+  const { downloadState, startDownload, cancelDownload, resetState } = useBulkDownload();
+
+  // Filter responses that have file attachments
+  const responsesWithFiles = useMemo(() => {
+    return responses.filter(r => r.fileUrl && r.fileName);
+  }, [responses]);
+
+  // Build files array for bulk download
+  const filesToDownload: FileToDownload[] = useMemo(() => {
+    return responsesWithFiles.map(r => ({
+      url: r.fileUrl!,
+      fileName: r.fileName!,
+      studentName: r.userName,
+    }));
+  }, [responsesWithFiles]);
+
+  const handleBulkDownload = async () => {
+    if (!task || filesToDownload.length === 0) return;
+    setShowDownloadModal(true);
+    await startDownload(filesToDownload, task.title);
+  };
+
+  const handleCloseModal = () => {
+    if (downloadState.state === 'fetching' || downloadState.state === 'zipping') {
+      cancelDownload();
+    }
+    setShowDownloadModal(false);
+    resetState();
+  };
 
   const fetchData = useCallback(async () => {
     try {
@@ -137,6 +172,16 @@ export default function TaskResponsesPage() {
           <h1 className="text-2xl font-bold text-gray-900">{task.title}</h1>
           <p className="text-gray-500">{task.description}</p>
         </div>
+        {responsesWithFiles.length > 0 && (
+          <Button
+            variant="outline"
+            onClick={handleBulkDownload}
+            disabled={downloadState.state === 'fetching' || downloadState.state === 'zipping'}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Download All ({responsesWithFiles.length})
+          </Button>
+        )}
       </div>
 
       {/* Questions Reference */}
@@ -263,6 +308,122 @@ export default function TaskResponsesPage() {
           ))}
         </div>
       )}
+
+      {/* Bulk Download Progress Modal */}
+      <Modal
+        isOpen={showDownloadModal}
+        onClose={handleCloseModal}
+        title="Downloading Attachments"
+        size="sm"
+        closeOnOverlayClick={false}
+        closeOnEscape={downloadState.state === 'complete' || downloadState.state === 'error' || downloadState.state === 'cancelled'}
+      >
+        <div className="space-y-4">
+          {(downloadState.state === 'fetching' || downloadState.state === 'zipping') && (
+            <>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm text-gray-600">
+                  <span>
+                    {downloadState.state === 'zipping'
+                      ? 'Creating ZIP file...'
+                      : `Downloading file ${downloadState.currentFile} of ${downloadState.totalFiles}`}
+                  </span>
+                  <span>
+                    {Math.round((downloadState.currentFile / downloadState.totalFiles) * 100)}%
+                  </span>
+                </div>
+                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-ymau-dark-red transition-all duration-300"
+                    style={{
+                      width: `${(downloadState.currentFile / downloadState.totalFiles) * 100}%`,
+                    }}
+                  />
+                </div>
+                {downloadState.currentFileName && downloadState.state === 'fetching' && (
+                  <p className="text-xs text-gray-500 truncate">
+                    {downloadState.currentFileName}
+                  </p>
+                )}
+              </div>
+              <div className="flex justify-end">
+                <Button variant="outline" onClick={cancelDownload}>
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel
+                </Button>
+              </div>
+            </>
+          )}
+
+          {downloadState.state === 'complete' && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 text-emerald-600">
+                <CheckCircle className="h-6 w-6" />
+                <span className="font-medium">Download complete</span>
+              </div>
+              {downloadState.failedFiles.length > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-amber-800">
+                        {downloadState.failedFiles.length} file{downloadState.failedFiles.length !== 1 ? 's' : ''} failed to download
+                      </p>
+                      <ul className="mt-1 text-sm text-amber-700 list-disc list-inside">
+                        {downloadState.failedFiles.map((file, i) => (
+                          <li key={i} className="truncate">{file}</li>
+                        ))}
+                      </ul>
+                      <p className="mt-2 text-xs text-amber-600">
+                        You can download these files individually.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div className="flex justify-end">
+                <Button onClick={handleCloseModal}>Close</Button>
+              </div>
+            </div>
+          )}
+
+          {downloadState.state === 'error' && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 text-red-600">
+                <AlertCircle className="h-6 w-6" />
+                <span className="font-medium">Download failed</span>
+              </div>
+              {downloadState.failedFiles.length > 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-sm text-red-700">
+                    Could not download any files. Please try again later.
+                  </p>
+                </div>
+              )}
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={handleCloseModal}>
+                  Close
+                </Button>
+                <Button onClick={handleBulkDownload}>
+                  Try Again
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {downloadState.state === 'cancelled' && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 text-gray-600">
+                <X className="h-6 w-6" />
+                <span className="font-medium">Download cancelled</span>
+              </div>
+              <div className="flex justify-end">
+                <Button onClick={handleCloseModal}>Close</Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 }

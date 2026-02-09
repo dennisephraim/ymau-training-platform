@@ -44,8 +44,8 @@ export async function getEnrollmentCodes(courseId: string): Promise<EnrollmentCo
     return {
       id: docSnap.id,
       ...data,
-      createdAt: toDate(data.createdAt as any) || new Date(),
-      expiresAt: toDate(data.expiresAt as any),
+      createdAt: toDate(data.createdAt as Timestamp | Date) || new Date(),
+      expiresAt: toDate(data.expiresAt as Timestamp | Date),
     };
   });
 }
@@ -62,8 +62,8 @@ export async function getEnrollmentCode(codeId: string): Promise<EnrollmentCode 
   return {
     id: snapshot.id,
     ...data,
-    createdAt: toDate(data.createdAt as any) || new Date(),
-    expiresAt: toDate(data.expiresAt as any),
+    createdAt: toDate(data.createdAt as Timestamp | Date) || new Date(),
+    expiresAt: toDate(data.expiresAt as Timestamp | Date),
   };
 }
 
@@ -81,8 +81,8 @@ export async function getEnrollmentCodeByCode(code: string): Promise<EnrollmentC
   return {
     id: docSnap.id,
     ...data,
-    createdAt: toDate(data.createdAt as any) || new Date(),
-    expiresAt: toDate(data.expiresAt as any),
+    createdAt: toDate(data.createdAt as Timestamp | Date) || new Date(),
+    expiresAt: toDate(data.expiresAt as Timestamp | Date),
   };
 }
 

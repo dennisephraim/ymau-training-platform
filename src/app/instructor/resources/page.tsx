@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
@@ -25,7 +25,6 @@ import {
   FolderOpen,
   Calendar,
   X,
-  Loader2,
 } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthContext';
 import { Resource } from '@/types/resource';

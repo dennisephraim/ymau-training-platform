@@ -4,11 +4,9 @@ import { use, useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft,
-  Play,
   CheckCircle,
   Lock,
   Clock,
-  ChevronRight,
   Award,
   PartyPopper,
   HelpCircle,
@@ -24,7 +22,7 @@ import { ChapterQuizPlayer } from '@/components/quiz';
 import { useVideoProgress } from '@/lib/hooks/useVideoProgress';
 import { Enrollment } from '@/types/enrollment';
 import { Course, Chapter } from '@/types/course';
-import { ChapterProgress, CourseProgress } from '@/types/progress';
+import { ChapterProgress, CourseProgress, WatchedSegment } from '@/types/progress';
 import { Certificate } from '@/types/certificate';
 import { ChapterQuiz, QuizProgress } from '@/types/quiz';
 import * as enrollmentService from '@/lib/services/enrollments';
@@ -166,6 +164,7 @@ export default function CourseViewerPage({
     if (allChaptersComplete && !certificate) {
       setShowCompletionModal(true);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- checkAllChaptersComplete is called within, not needed as dep
   }, [enrollmentId, enrollment, course, user, certificate, chapterQuizzes, quizProgress]);
 
   // Check if all chapters are complete (video + quiz)
@@ -763,7 +762,6 @@ function ChapterVideoPlayer({
     watchedPercentage,
     updateProgress,
     saveProgress,
-    isSaving,
   } = useVideoProgress({
     enrollmentId,
     chapterId: chapter.id,
@@ -784,7 +782,7 @@ function ChapterVideoPlayer({
   }, [watchedPercentage, onPercentageChange]);
 
   const handleProgress = useCallback(
-    (segments: any, position: number, maxWatched?: number) => {
+    (segments: WatchedSegment[], position: number, maxWatched?: number) => {
       updateProgress(segments, position, maxWatched);
     },
     [updateProgress]

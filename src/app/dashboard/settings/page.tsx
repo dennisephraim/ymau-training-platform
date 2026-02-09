@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Camera, Upload, X, Pencil, Check } from 'lucide-react';
+import { Camera, X, Pencil, Check } from 'lucide-react';
 import { uploadProfilePicture } from '@/lib/services/storage';
 import { updateUserProfile } from '@/lib/services/users';
 
@@ -41,8 +41,8 @@ export default function SettingsPage() {
 
       await updateUserProfile(user.id, { photoURL });
       await refreshUser();
-    } catch (err: any) {
-      setError(err.message || 'Failed to upload profile picture');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upload profile picture');
     } finally {
       setUploading(false);
       setUploadProgress(0);
@@ -62,8 +62,8 @@ export default function SettingsPage() {
       await updateUserProfile(user.id, { displayName: displayName.trim() });
       await refreshUser();
       setEditingName(false);
-    } catch (err: any) {
-      setError(err.message || 'Failed to update display name');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update display name');
     } finally {
       setSavingName(false);
     }

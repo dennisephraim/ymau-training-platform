@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { Input } from '@/components/ui/Input';
 import { Progress } from '@/components/ui/Progress';
 import {
   ArrowLeft,
@@ -17,7 +16,6 @@ import {
   Upload,
   FileText,
   X,
-  Loader2,
   Send,
   Users,
 } from 'lucide-react';

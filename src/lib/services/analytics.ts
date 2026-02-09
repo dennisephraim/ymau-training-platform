@@ -8,9 +8,6 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { Course } from '@/types/course';
-import { Enrollment } from '@/types/enrollment';
-import { ChapterProgress } from '@/types/progress';
-import { Certificate } from '@/types/certificate';
 import * as courseService from './courses';
 import * as progressService from './progress';
 

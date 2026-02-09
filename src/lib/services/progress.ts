@@ -4,7 +4,6 @@ import {
   getDocs,
   getDoc,
   setDoc,
-  updateDoc,
   query,
   where,
   serverTimestamp,
@@ -118,8 +117,8 @@ export async function getChapterProgress(
   return {
     id: snapshot.id,
     ...data,
-    completedAt: toDate(data.completedAt as any),
-    updatedAt: toDate(data.updatedAt as any) || new Date(),
+    completedAt: toDate(data.completedAt as Timestamp | Date),
+    updatedAt: toDate(data.updatedAt as Timestamp | Date) || new Date(),
   };
 }
 
@@ -138,8 +137,8 @@ export async function getEnrollmentProgress(enrollmentId: string): Promise<Chapt
     return {
       id: doc.id,
       ...data,
-      completedAt: toDate(data.completedAt as any),
-      updatedAt: toDate(data.updatedAt as any) || new Date(),
+      completedAt: toDate(data.completedAt as Timestamp | Date),
+      updatedAt: toDate(data.updatedAt as Timestamp | Date) || new Date(),
     };
   });
 }

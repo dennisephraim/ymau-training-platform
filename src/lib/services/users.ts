@@ -34,8 +34,8 @@ export async function getUser(userId: string): Promise<User | null> {
   return {
     id: snapshot.id,
     ...data,
-    createdAt: toDate(data.createdAt as any),
-    updatedAt: toDate(data.updatedAt as any),
+    createdAt: toDate(data.createdAt as Timestamp | Date),
+    updatedAt: toDate(data.updatedAt as Timestamp | Date),
   };
 }
 
@@ -82,8 +82,8 @@ export async function getAllUsers(): Promise<User[]> {
     return {
       id: doc.id,
       ...data,
-      createdAt: toDate(data.createdAt as any),
-      updatedAt: toDate(data.updatedAt as any),
+      createdAt: toDate(data.createdAt as Timestamp | Date),
+      updatedAt: toDate(data.updatedAt as Timestamp | Date),
     };
   });
 }
@@ -108,8 +108,8 @@ export async function getUsersByRole(role: UserRole): Promise<User[]> {
     return {
       id: doc.id,
       ...data,
-      createdAt: toDate(data.createdAt as any),
-      updatedAt: toDate(data.updatedAt as any),
+      createdAt: toDate(data.createdAt as Timestamp | Date),
+      updatedAt: toDate(data.updatedAt as Timestamp | Date),
     };
   });
 }
@@ -134,8 +134,8 @@ export async function getInstructorsAndAdmins(): Promise<User[]> {
     return {
       id: doc.id,
       ...data,
-      createdAt: toDate(data.createdAt as any),
-      updatedAt: toDate(data.updatedAt as any),
+      createdAt: toDate(data.createdAt as Timestamp | Date),
+      updatedAt: toDate(data.updatedAt as Timestamp | Date),
     };
   });
 }
@@ -181,8 +181,8 @@ export async function searchUsersByEmail(emailQuery: string): Promise<User[]> {
     return {
       id: doc.id,
       ...data,
-      createdAt: toDate(data.createdAt as any),
-      updatedAt: toDate(data.updatedAt as any),
+      createdAt: toDate(data.createdAt as Timestamp | Date),
+      updatedAt: toDate(data.updatedAt as Timestamp | Date),
     };
   });
 }

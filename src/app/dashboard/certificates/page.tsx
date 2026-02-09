@@ -4,10 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   Award,
-  Download,
   ExternalLink,
   Calendar,
-  BookOpen,
   Shield,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -119,10 +117,6 @@ function CertificateCard({
   certificate: Certificate;
   onUpdate: () => void;
 }) {
-  const verificationUrl = certificateService.getVerificationUrl(
-    certificate.verificationCode
-  );
-
   return (
     <Card className="overflow-hidden">
       {/* Certificate Preview Header */}

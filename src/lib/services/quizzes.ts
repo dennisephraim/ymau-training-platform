@@ -3,7 +3,6 @@ import {
   doc,
   getDocs,
   getDoc,
-  setDoc,
   addDoc,
   updateDoc,
   deleteDoc,
@@ -24,8 +23,6 @@ import {
   QuizAnswer,
   QuizProgress,
   ChapterQuizSettings,
-  DEFAULT_QUIZ_SETTINGS,
-  QuestionOption,
 } from '@/types/quiz';
 
 // Helper to convert Firestore timestamps to Date
@@ -54,8 +51,8 @@ export async function getChapterQuiz(chapterId: string): Promise<ChapterQuiz | n
   return {
     id: docSnapshot.id,
     ...data,
-    createdAt: toDate(data.createdAt as any),
-    updatedAt: toDate(data.updatedAt as any),
+    createdAt: toDate(data.createdAt as Timestamp | Date),
+    updatedAt: toDate(data.updatedAt as Timestamp | Date),
   };
 }
 
@@ -74,8 +71,8 @@ export async function getCourseQuizzes(courseId: string): Promise<ChapterQuiz[]>
     return {
       id: doc.id,
       ...data,
-      createdAt: toDate(data.createdAt as any),
-      updatedAt: toDate(data.updatedAt as any),
+      createdAt: toDate(data.createdAt as Timestamp | Date),
+      updatedAt: toDate(data.updatedAt as Timestamp | Date),
     };
   });
 }
@@ -231,8 +228,8 @@ export async function getQuizAttempt(attemptId: string): Promise<QuizAttempt | n
   return {
     id: snapshot.id,
     ...data,
-    startedAt: toDate(data.startedAt as any),
-    completedAt: data.completedAt ? toDate(data.completedAt as any) : null,
+    startedAt: toDate(data.startedAt as Timestamp | Date),
+    completedAt: data.completedAt ? toDate(data.completedAt as Timestamp | Date) : null,
   };
 }
 
@@ -259,8 +256,8 @@ export async function getStudentQuizAttempts(
     return {
       id: doc.id,
       ...data,
-      startedAt: toDate(data.startedAt as any),
-      completedAt: data.completedAt ? toDate(data.completedAt as any) : null,
+      startedAt: toDate(data.startedAt as Timestamp | Date),
+      completedAt: data.completedAt ? toDate(data.completedAt as Timestamp | Date) : null,
     };
   });
 }

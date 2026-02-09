@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/components/auth/AuthContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { CircularProgress } from '@/components/ui/Progress';
@@ -63,7 +63,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   // Instructor-specific state
-  const [instructorStats, setInstructorStats] = useState<InstructorStats>({
+  const [, setInstructorStats] = useState<InstructorStats>({
     pendingResponses: 0,
   });
 

@@ -1,13 +1,13 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import {
   User as FirebaseUser,
   onAuthStateChanged,
   signInWithPopup,
   signOut as firebaseSignOut
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { auth, db, googleProvider } from '@/lib/firebase/config';
 import { User, UserDocument } from '@/types/user';
 
@@ -31,30 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Check if Firebase is properly configured
   const isConfigured = Boolean(auth && db && googleProvider);
 
-  useEffect(() => {
-    if (!auth) {
-      setLoading(false);
-      return;
-    }
-
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setFirebaseUser(firebaseUser);
-
-      if (firebaseUser && db) {
-        // Fetch or create user document
-        const userDoc = await getOrCreateUser(firebaseUser);
-        setUser(userDoc);
-      } else {
-        setUser(null);
-      }
-
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  const getOrCreateUser = async (firebaseUser: FirebaseUser): Promise<User> => {
+  const getOrCreateUser = useCallback(async (firebaseUser: FirebaseUser): Promise<User> => {
     if (!db) {
       throw new Error('Firestore not initialized');
     }
@@ -67,8 +44,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return {
         id: firebaseUser.uid,
         ...data,
-        createdAt: data.createdAt instanceof Date ? data.createdAt : (data.createdAt as any).toDate(),
-        updatedAt: data.updatedAt instanceof Date ? data.updatedAt : (data.updatedAt as any).toDate(),
+        createdAt: data.createdAt instanceof Date ? data.createdAt : (data.createdAt as Timestamp).toDate(),
+        updatedAt: data.updatedAt instanceof Date ? data.updatedAt : (data.updatedAt as Timestamp).toDate(),
       };
     }
 
@@ -93,7 +70,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       id: firebaseUser.uid,
       ...newUser,
     };
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!auth) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- necessary for early return when auth not configured
+      setLoading(false);
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setFirebaseUser(firebaseUser);
+
+      if (firebaseUser && db) {
+        // Fetch or create user document
+        const userDoc = await getOrCreateUser(firebaseUser);
+        setUser(userDoc);
+      } else {
+        setUser(null);
+      }
+
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [getOrCreateUser]);
 
   const signInWithGoogle = async () => {
     if (!auth || !googleProvider) {

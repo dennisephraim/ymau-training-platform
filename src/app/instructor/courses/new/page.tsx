@@ -9,11 +9,10 @@ import { Input } from '@/components/ui/Input';
 import { useAuth } from '@/components/auth/AuthContext';
 import { InstructorPicker } from '@/components/courses/InstructorPicker';
 import * as courseService from '@/lib/services/courses';
-import { 
-  ArrowLeft, 
-  ArrowRight, 
-  BookOpen, 
-  FileText, 
+import {
+  ArrowLeft,
+  ArrowRight,
+  BookOpen,
   Sparkles,
   CheckCircle,
   AlertCircle
@@ -179,7 +178,7 @@ export default function NewCoursePage() {
                   <ul className="mt-2 space-y-1 text-sm text-gray-600">
                     <li className="flex items-center gap-2">
                       <CheckCircle className="h-3 w-3 text-emerald-500" />
-                      Use a specific title (e.g., "Spring 2026 Training" not "Training")
+                      Use a specific title (e.g., &quot;Spring 2026 Training&quot; not &quot;Training&quot;)
                     </li>
                     <li className="flex items-center gap-2">
                       <CheckCircle className="h-3 w-3 text-emerald-500" />

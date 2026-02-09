@@ -18,9 +18,8 @@ import {
   Copy,
   AlertCircle,
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { useAuth } from '@/components/auth/AuthContext';
 import { Chapter } from '@/types/course';
@@ -45,7 +44,7 @@ export default function ChapterQuizPage({
   const router = useRouter();
 
   const [chapter, setChapter] = useState<Chapter | null>(null);
-  const [quiz, setQuiz] = useState<ChapterQuiz | null>(null);
+  const [, setQuiz] = useState<ChapterQuiz | null>(null);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [settings, setSettings] = useState<ChapterQuizSettings>(DEFAULT_QUIZ_SETTINGS);
   const [loading, setLoading] = useState(true);
