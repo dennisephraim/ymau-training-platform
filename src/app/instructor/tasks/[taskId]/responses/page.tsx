@@ -20,16 +20,21 @@ import {
   ChevronUp,
   AlertCircle,
   X,
+  Filter,
 } from 'lucide-react';
 import { Task, TaskResponse } from '@/types/task';
+import { Committee } from '@/types/committee';
 import * as taskService from '@/lib/services/tasks';
 import * as userService from '@/lib/services/users';
+import * as committeeService from '@/lib/services/committees';
 import { useBulkDownload } from '@/lib/hooks/useBulkDownload';
 import { FileToDownload } from '@/lib/utils/bulkDownload';
 
 interface ResponseWithUser extends TaskResponse {
   userName: string;
   userEmail: string;
+  committeeId: string | null;
+  committeeName: string;
 }
 
 export default function TaskResponsesPage() {
@@ -42,12 +47,22 @@ export default function TaskResponsesPage() {
   const [expandedResponse, setExpandedResponse] = useState<string | null>(null);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
 
+  // Committee filter state
+  const [committees, setCommittees] = useState<Committee[]>([]);
+  const [committeeFilterId, setCommitteeFilterId] = useState<string>('');
+
   const { downloadState, startDownload, cancelDownload, resetState } = useBulkDownload();
 
-  // Filter responses that have file attachments
+  // Apply committee filter to responses
+  const filteredResponses = useMemo(() => {
+    if (!committeeFilterId) return responses;
+    return responses.filter((r) => r.committeeId === committeeFilterId);
+  }, [responses, committeeFilterId]);
+
+  // Filter responses that have file attachments (uses filtered responses)
   const responsesWithFiles = useMemo(() => {
-    return responses.filter(r => r.fileUrl && r.fileName);
-  }, [responses]);
+    return filteredResponses.filter(r => r.fileUrl && r.fileName);
+  }, [filteredResponses]);
 
   // Build files array for bulk download
   const filesToDownload: FileToDownload[] = useMemo(() => {
@@ -75,10 +90,11 @@ export default function TaskResponsesPage() {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      
-      const [taskData, responsesData] = await Promise.all([
+
+      const [taskData, responsesData, committeesData] = await Promise.all([
         taskService.getTask(taskId),
         taskService.getTaskResponses(taskId),
+        committeeService.getAllCommittees(),
       ]);
 
       if (!taskData) {
@@ -86,6 +102,10 @@ export default function TaskResponsesPage() {
       }
 
       setTask(taskData);
+      setCommittees(committeesData);
+
+      // Build committee lookup
+      const committeeMap = new Map(committeesData.map((c) => [c.id, c.name]));
 
       // Fetch user info for each response
       const responsesWithUsers = await Promise.all(
@@ -96,12 +116,18 @@ export default function TaskResponsesPage() {
               ...response,
               userName: user?.displayName || 'Unknown User',
               userEmail: user?.email || '',
+              committeeId: user?.committeeId || null,
+              committeeName: user?.committeeId
+                ? committeeMap.get(user.committeeId) || 'Unknown'
+                : 'No committee',
             };
           } catch {
             return {
               ...response,
               userName: 'Unknown User',
               userEmail: '',
+              committeeId: null,
+              committeeName: 'No committee',
             };
           }
         })
@@ -166,7 +192,10 @@ export default function TaskResponsesPage() {
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
             <Badge variant="info" size="sm">
-              {responses.length} response{responses.length !== 1 ? 's' : ''}
+              {committeeFilterId
+                ? `${filteredResponses.length} of ${responses.length} response${responses.length !== 1 ? 's' : ''}`
+                : `${responses.length} response${responses.length !== 1 ? 's' : ''}`
+              }
             </Badge>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">{task.title}</h1>
@@ -179,8 +208,37 @@ export default function TaskResponsesPage() {
             disabled={downloadState.state === 'fetching' || downloadState.state === 'zipping'}
           >
             <Download className="h-4 w-4 mr-2" />
-            Download All ({responsesWithFiles.length})
+            {committeeFilterId
+              ? `Download Filtered (${responsesWithFiles.length})`
+              : `Download All (${responsesWithFiles.length})`
+            }
           </Button>
+        )}
+      </div>
+
+      {/* Committee Filter */}
+      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+        <Filter className="h-4 w-4 text-gray-500" />
+        <label className="text-sm font-medium text-gray-700">Committee:</label>
+        <select
+          value={committeeFilterId}
+          onChange={(e) => setCommitteeFilterId(e.target.value)}
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-ymau-dark-red focus:outline-none focus:ring-1 focus:ring-ymau-dark-red"
+        >
+          <option value="">All Submissions</option>
+          {committees.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        {committees.length === 0 && (
+          <Link
+            href="/instructor/committees"
+            className="text-xs text-gray-400 hover:text-ymau-dark-red transition-colors"
+          >
+            No committees yet &mdash; manage committees
+          </Link>
         )}
       </div>
 
@@ -204,21 +262,24 @@ export default function TaskResponsesPage() {
       </Card>
 
       {/* Responses */}
-      {responses.length === 0 ? (
+      {filteredResponses.length === 0 ? (
         <Card className="border-dashed border-2 border-gray-300 bg-gray-50">
           <CardContent className="py-12">
             <EmptyState
               icon={<FileText className="h-8 w-8" />}
-              title="No Responses Yet"
-              description="No one has submitted a response to this task yet."
+              title={committeeFilterId ? "No Matching Responses" : "No Responses Yet"}
+              description={committeeFilterId
+                ? "No submissions from this committee."
+                : "No one has submitted a response to this task yet."
+              }
             />
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-gray-900">Submissions</h2>
-          
-          {responses.map((response) => (
+
+          {filteredResponses.map((response) => (
             <Card key={response.id} className="overflow-hidden">
               <button
                 onClick={() => toggleExpand(response.id)}
@@ -231,6 +292,9 @@ export default function TaskResponsesPage() {
                   <div className="text-left">
                     <p className="font-semibold text-gray-900">{response.userName}</p>
                     <p className="text-sm text-gray-500">{response.userEmail}</p>
+                    <p className={`text-xs mt-0.5 ${response.committeeId ? 'text-gray-400' : 'text-gray-400 italic'}`}>
+                      {response.committeeName}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">

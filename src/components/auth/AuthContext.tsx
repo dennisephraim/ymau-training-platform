@@ -44,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return {
         id: firebaseUser.uid,
         ...data,
+        committeeId: data.committeeId || null,
         createdAt: data.createdAt instanceof Date ? data.createdAt : (data.createdAt as Timestamp).toDate(),
         updatedAt: data.updatedAt instanceof Date ? data.updatedAt : (data.updatedAt as Timestamp).toDate(),
       };
@@ -55,6 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       displayName: firebaseUser.displayName || '',
       photoURL: firebaseUser.photoURL,
       role: 'student',
+      committeeId: null,
       isActive: true,
       createdAt: new Date(),
       updatedAt: new Date(),

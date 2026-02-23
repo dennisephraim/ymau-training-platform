@@ -6,6 +6,7 @@ export interface User {
   displayName: string;
   photoURL: string | null;
   role: UserRole;
+  committeeId: string | null;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -16,6 +17,7 @@ export interface UserDocument {
   displayName: string;
   photoURL: string | null;
   role: UserRole;
+  committeeId: string | null;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;

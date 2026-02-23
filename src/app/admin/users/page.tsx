@@ -17,7 +17,9 @@ import { Input } from '@/components/ui/Input';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuth } from '@/components/auth/AuthContext';
 import { User, UserRole } from '@/types/user';
+import { Committee } from '@/types/committee';
 import * as userService from '@/lib/services/users';
+import * as committeeService from '@/lib/services/committees';
 import { getPlatformStats, PlatformStats } from '@/lib/services/analytics';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 
@@ -30,17 +32,20 @@ export default function ManageUsersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<UserRole | 'all'>('all');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [committeeMap, setCommitteeMap] = useState<Map<string, Committee>>(new Map());
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const [usersData, statsData] = await Promise.all([
+      const [usersData, statsData, committeesData] = await Promise.all([
         userService.getAllUsers(),
         getPlatformStats(),
+        committeeService.getAllCommittees(),
       ]);
       setUsers(usersData);
       setFilteredUsers(usersData);
       setStats(statsData);
+      setCommitteeMap(new Map(committeesData.map((c) => [c.id, c])));
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -271,6 +276,7 @@ export default function ManageUsersPage() {
                   isLoading={actionLoading === user.id}
                   onRoleChange={handleRoleChange}
                   onStatusChange={handleStatusChange}
+                  committeeName={user.committeeId ? committeeMap.get(user.committeeId)?.name : undefined}
                 />
               ))
             )}
@@ -287,12 +293,14 @@ function UserRow({
   isLoading,
   onRoleChange,
   onStatusChange,
+  committeeName,
 }: {
   user: User;
   currentUserId: string;
   isLoading: boolean;
   onRoleChange: (userId: string, role: UserRole) => void;
   onStatusChange: (userId: string, isActive: boolean) => void;
+  committeeName?: string;
 }) {
   const [showMenu, setShowMenu] = useState(false);
   const isCurrentUser = user.id === currentUserId;
@@ -352,6 +360,11 @@ function UserRow({
             )}
           </div>
           <p className="text-sm text-gray-500 truncate">{user.email}</p>
+          {user.role === 'student' && (
+            <p className="text-xs text-gray-400 mt-0.5">
+              {committeeName || <span className="italic">No committee</span>}
+            </p>
+          )}
           <p className="text-xs text-gray-400 mt-1">
             Joined {formatRelativeTime(user.createdAt)}
           </p>

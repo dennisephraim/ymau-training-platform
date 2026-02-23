@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/components/auth/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { Camera, X, Pencil, Check } from 'lucide-react';
 import { uploadProfilePicture } from '@/lib/services/storage';
 import { updateUserProfile } from '@/lib/services/users';
+import { getCommittee } from '@/lib/services/committees';
 
 export default function SettingsPage() {
   const { user, refreshUser } = useAuth();
@@ -18,7 +19,16 @@ export default function SettingsPage() {
   const [editingName, setEditingName] = useState(false);
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [savingName, setSavingName] = useState(false);
+  const [committeeName, setCommitteeName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (user?.committeeId) {
+      getCommittee(user.committeeId).then((c) => {
+        setCommitteeName(c?.name || null);
+      });
+    }
+  }, [user?.committeeId]);
 
   const roleLabels = {
     student: 'Student',
@@ -181,6 +191,12 @@ export default function SettingsPage() {
 
           <div className="pt-4 border-t border-gray-200">
             <dl className="space-y-3">
+              <div className="flex justify-between">
+                <dt className="text-sm text-gray-500">Committee</dt>
+                <dd className="text-sm font-medium text-gray-900">
+                  {committeeName || <span className="text-gray-400">Not assigned</span>}
+                </dd>
+              </div>
               <div className="flex justify-between">
                 <dt className="text-sm text-gray-500">Role</dt>
                 <dd className="text-sm font-medium text-gray-900">
