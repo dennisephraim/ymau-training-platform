@@ -9,11 +9,11 @@ import { Progress, CircularProgress } from '@/components/ui/Progress';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
-import { 
-  BookOpen, 
-  Clock, 
-  Video, 
-  Play, 
+import {
+  BookOpen,
+  Clock,
+  Video,
+  Play,
   CheckCircle,
   Plus,
   GraduationCap,
@@ -24,6 +24,7 @@ import {
   Upload,
   Key,
   ArrowRight,
+  UsersRound,
 } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthContext';
 import { Enrollment } from '@/types/enrollment';
@@ -34,6 +35,7 @@ import * as enrollmentService from '@/lib/services/enrollments';
 import * as courseService from '@/lib/services/courses';
 import * as progressService from '@/lib/services/progress';
 import * as taskService from '@/lib/services/tasks';
+import * as committeeCodeService from '@/lib/services/committeeCodes';
 import { formatDuration } from '@/lib/utils/formatters';
 
 interface EnrolledCourse extends Enrollment {
@@ -53,6 +55,13 @@ export default function MyActivitiesPage() {
   const [codeLoading, setCodeLoading] = useState(false);
   const [codeError, setCodeError] = useState<string | null>(null);
   const [codeSuccess, setCodeSuccess] = useState(false);
+
+  // Committee join code modal state
+  const [showCommitteeJoinModal, setShowCommitteeJoinModal] = useState(false);
+  const [committeeJoinCode, setCommitteeJoinCode] = useState('');
+  const [committeeCodeLoading, setCommitteeCodeLoading] = useState(false);
+  const [committeeCodeError, setCommitteeCodeError] = useState<string | null>(null);
+  const [committeeCodeSuccess, setCommitteeCodeSuccess] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     if (!user) return;
@@ -127,6 +136,42 @@ export default function MyActivitiesPage() {
     setJoinCode('');
     setCodeError(null);
     setCodeSuccess(false);
+  };
+
+  // Handle committee join code submission
+  const handleCommitteeJoinCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !committeeJoinCode.trim()) return;
+
+    setCommitteeCodeLoading(true);
+    setCommitteeCodeError(null);
+
+    try {
+      const result = await committeeCodeService.joinCommitteeWithCode(
+        committeeJoinCode.trim().toUpperCase(),
+        user.id
+      );
+
+      if (result.success) {
+        setCommitteeCodeSuccess(result.committeeName || 'the committee');
+        setTimeout(() => {
+          resetCommitteeJoinModal();
+        }, 1500);
+      } else {
+        setCommitteeCodeError(result.error || 'Failed to join committee');
+      }
+    } catch {
+      setCommitteeCodeError('An error occurred. Please try again.');
+    } finally {
+      setCommitteeCodeLoading(false);
+    }
+  };
+
+  const resetCommitteeJoinModal = () => {
+    setShowCommitteeJoinModal(false);
+    setCommitteeJoinCode('');
+    setCommitteeCodeError(null);
+    setCommitteeCodeSuccess(null);
   };
 
   // Separate completed and in-progress courses
@@ -218,6 +263,62 @@ export default function MyActivitiesPage() {
         </div>
       </Modal>
 
+      {/* Join Committee Modal */}
+      <Modal
+        isOpen={showCommitteeJoinModal}
+        onClose={resetCommitteeJoinModal}
+        title="Join Committee"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-500">
+            Enter the committee code from your instructor to join a committee.
+          </p>
+
+          {committeeCodeSuccess ? (
+            <div className="flex items-center justify-center gap-2 py-8 text-emerald-600">
+              <CheckCircle className="h-6 w-6" />
+              <span className="font-medium text-lg">Joined {committeeCodeSuccess}!</span>
+            </div>
+          ) : (
+            <form onSubmit={handleCommitteeJoinCode} className="space-y-4">
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                  <UsersRound className="h-5 w-5 text-gray-400" />
+                </div>
+                <Input
+                  value={committeeJoinCode}
+                  onChange={(e) => {
+                    setCommitteeJoinCode(e.target.value.toUpperCase());
+                    setCommitteeCodeError(null);
+                  }}
+                  placeholder="ENTER CODE"
+                  className="pl-10 font-mono text-center tracking-widest uppercase text-lg"
+                  maxLength={10}
+                  autoFocus
+                />
+              </div>
+
+              {committeeCodeError && (
+                <div className="flex items-center gap-2 text-red-600 text-sm">
+                  <AlertCircle className="h-4 w-4" />
+                  {committeeCodeError}
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-2">
+                <Button type="button" variant="outline" onClick={resetCommitteeJoinModal}>
+                  Cancel
+                </Button>
+                <Button type="submit" isLoading={committeeCodeLoading} disabled={!committeeJoinCode.trim()}>
+                  <ArrowRight className="h-4 w-4 mr-2" />
+                  Join Committee
+                </Button>
+              </div>
+            </form>
+          )}
+        </div>
+      </Modal>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -229,10 +330,16 @@ export default function MyActivitiesPage() {
             }
           </p>
         </div>
-        <Button onClick={() => setShowJoinModal(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Join Course
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setShowCommitteeJoinModal(true)}>
+            <UsersRound className="h-4 w-4 mr-2" />
+            Join Committee
+          </Button>
+          <Button onClick={() => setShowJoinModal(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Join Course
+          </Button>
+        </div>
       </div>
 
       {!hasContent ? (

@@ -128,6 +128,14 @@ export async function deleteCommittee(id: string): Promise<void> {
     batch.update(docSnap.ref, { committeeId: null });
   });
 
+  // Delete all committee codes for this committee
+  const codesRef = collection(db, 'committeeCodes');
+  const codesQuery = query(codesRef, where('committeeId', '==', id));
+  const codesSnapshot = await getDocs(codesQuery);
+  codesSnapshot.docs.forEach((docSnap) => {
+    batch.delete(docSnap.ref);
+  });
+
   // Delete the committee
   const committeeRef = doc(db, 'committees', id);
   batch.delete(committeeRef);

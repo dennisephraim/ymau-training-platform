@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Modal } from '@/components/ui/Modal';
 import { Avatar } from '@/components/ui/Avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import {
   Plus,
   UsersRound,
@@ -18,11 +19,18 @@ import {
   UserPlus,
   Loader2,
   Pencil,
+  Key,
+  Copy,
+  X,
 } from 'lucide-react';
 import { Committee } from '@/types/committee';
+import { CommitteeCode } from '@/types/committeeCode';
 import { User } from '@/types/user';
+import { useAuth } from '@/components/auth/AuthContext';
 import * as committeeService from '@/lib/services/committees';
+import * as committeeCodeService from '@/lib/services/committeeCodes';
 import * as userService from '@/lib/services/users';
+import { formatRelativeTime } from '@/lib/utils/formatters';
 
 interface CommitteeFormFields {
   name: string;
@@ -39,9 +47,14 @@ const emptyFormFields: CommitteeFormFields = {
 };
 
 export default function CommitteesPage() {
+  const { user } = useAuth();
   const [committees, setCommittees] = useState<Committee[]>([]);
   const [allStudents, setAllStudents] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Committee codes state
+  const [committeeCodes, setCommitteeCodes] = useState<CommitteeCode[]>([]);
+  const [loadingCodes, setLoadingCodes] = useState(false);
 
   // Committee list state
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -89,9 +102,9 @@ export default function CommitteesPage() {
     return allStudents.filter((s) => s.committeeId === committeeId).length;
   };
 
-  // Fetch members when a committee is selected
+  // Fetch members and codes when a committee is selected
   const selectCommittee = useCallback(
-    (committee: Committee) => {
+    async (committee: Committee) => {
       setSelectedCommittee(committee);
       setLoadingMembers(true);
       const committeeMembers = allStudents.filter(
@@ -99,6 +112,17 @@ export default function CommitteesPage() {
       );
       setMembers(committeeMembers);
       setLoadingMembers(false);
+
+      // Fetch committee codes
+      setLoadingCodes(true);
+      try {
+        const codes = await committeeCodeService.getCommitteeCodes(committee.id);
+        setCommitteeCodes(codes);
+      } catch (err) {
+        console.error('Error fetching committee codes:', err);
+      } finally {
+        setLoadingCodes(false);
+      }
     },
     [allStudents]
   );
@@ -235,6 +259,45 @@ export default function CommitteesPage() {
       console.error('Error adding students:', err);
     } finally {
       setAddingStudents(false);
+    }
+  };
+
+  // Committee code handlers
+  const handleCreateCode = async () => {
+    if (!user || !selectedCommittee) return;
+    try {
+      await committeeCodeService.createCommitteeCode(selectedCommittee.id, user.id);
+      const codes = await committeeCodeService.getCommitteeCodes(selectedCommittee.id);
+      setCommitteeCodes(codes);
+    } catch (err) {
+      console.error('Error creating code:', err);
+    }
+  };
+
+  const handleCopyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+  };
+
+  const handleDeactivateCode = async (codeId: string) => {
+    if (!selectedCommittee) return;
+    try {
+      await committeeCodeService.deactivateCommitteeCode(codeId);
+      const codes = await committeeCodeService.getCommitteeCodes(selectedCommittee.id);
+      setCommitteeCodes(codes);
+    } catch (err) {
+      console.error('Error deactivating code:', err);
+    }
+  };
+
+  const handleDeleteCode = async (codeId: string) => {
+    if (!selectedCommittee) return;
+    if (!confirm('Are you sure you want to delete this committee code?')) return;
+    try {
+      await committeeCodeService.deleteCommitteeCode(codeId);
+      const codes = await committeeCodeService.getCommitteeCodes(selectedCommittee.id);
+      setCommitteeCodes(codes);
+    } catch (err) {
+      console.error('Error deleting code:', err);
     }
   };
 
@@ -379,70 +442,182 @@ export default function CommitteesPage() {
           </Button>
         </div>
 
-        {/* Members */}
-        {loadingMembers ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-ymau-dark-red" />
-          </div>
-        ) : members.length === 0 ? (
-          <Card className="border-dashed border-2 border-gray-300 bg-gray-50">
-            <CardContent className="py-12">
-              <EmptyState
-                icon={<UsersRound className="h-8 w-8" />}
-                title="No Students Assigned"
-                description="Add students to this committee to get started."
-                action={
-                  <Button onClick={() => setShowAddModal(true)}>
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Add Students
-                  </Button>
-                }
-              />
-            </CardContent>
-          </Card>
-        ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                Members
-                <Badge variant="info" size="sm">{members.length}</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {members.map((member) => (
-                  <div
-                    key={member.id}
-                    className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Avatar
-                        src={member.photoURL}
-                        fallback={member.displayName || member.email}
-                        size="sm"
-                      />
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {member.displayName || 'No Name'}
-                        </p>
-                        <p className="text-sm text-gray-500">{member.email}</p>
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveMember(member.id)}
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <UserMinus className="h-4 w-4 mr-1" />
-                      Remove
-                    </Button>
-                  </div>
-                ))}
+        {/* Members & Join Codes Tabs */}
+        <Tabs defaultValue="members">
+          <TabsList>
+            <TabsTrigger value="members">
+              <UsersRound className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Members</span>
+            </TabsTrigger>
+            <TabsTrigger value="codes">
+              <Key className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Join Codes</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="members" className="space-y-6">
+            {loadingMembers ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-ymau-dark-red" />
               </div>
-            </CardContent>
-          </Card>
-        )}
+            ) : members.length === 0 ? (
+              <Card className="border-dashed border-2 border-gray-300 bg-gray-50">
+                <CardContent className="py-12">
+                  <EmptyState
+                    icon={<UsersRound className="h-8 w-8" />}
+                    title="No Students Assigned"
+                    description="Add students to this committee to get started."
+                    action={
+                      <Button onClick={() => setShowAddModal(true)}>
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Add Students
+                      </Button>
+                    }
+                  />
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    Members
+                    <Badge variant="info" size="sm">{members.length}</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {members.map((member) => (
+                      <div
+                        key={member.id}
+                        className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Avatar
+                            src={member.photoURL}
+                            fallback={member.displayName || member.email}
+                            size="sm"
+                          />
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              {member.displayName || 'No Name'}
+                            </p>
+                            <p className="text-sm text-gray-500">{member.email}</p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveMember(member.id)}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <UserMinus className="h-4 w-4 mr-1" />
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="codes" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <CardTitle className="flex items-center">
+                      <Key className="h-5 w-5 mr-2" />
+                      Join Codes
+                    </CardTitle>
+                    <CardDescription>
+                      Create and manage join codes for students to self-join this committee
+                    </CardDescription>
+                  </div>
+                  <Button onClick={handleCreateCode} className="w-full sm:w-auto">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Code
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {loadingCodes ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-ymau-dark-red" />
+                  </div>
+                ) : committeeCodes.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Key className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-4 text-lg font-medium text-gray-900">No Join Codes</h3>
+                    <p className="mt-2 text-sm text-gray-500">
+                      Create a code to allow students to self-join this committee.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {committeeCodes.map((code) => (
+                      <div
+                        key={code.id}
+                        className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border ${
+                          code.isActive ? 'bg-white border-gray-200' : 'bg-gray-100 border-gray-200'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 sm:gap-4">
+                          <div className="font-mono text-lg font-bold tracking-wider text-ymau-dark-red">
+                            {code.code}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleCopyCode(code.code)}
+                            aria-label="Copy code"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
+                          <div className="text-left sm:text-right text-sm min-w-0">
+                            <p className="text-gray-500">
+                              Used {code.useCount}{code.maxUses ? ` / ${code.maxUses}` : ''} times
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              Created {formatRelativeTime(code.createdAt)}
+                            </p>
+                          </div>
+                          <Badge variant={code.isActive ? 'success' : 'default'} className="shrink-0">
+                            {code.isActive ? 'Active' : 'Inactive'}
+                          </Badge>
+                          <div className="flex gap-1 shrink-0">
+                            {code.isActive && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDeactivateCode(code.id)}
+                                className="text-gray-500 hover:text-gray-700"
+                                aria-label="Deactivate code"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteCode(code.id)}
+                              className="text-red-500 hover:text-red-700"
+                              aria-label="Delete code"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         {/* Add Students Modal */}
         <Modal
