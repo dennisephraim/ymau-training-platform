@@ -2,6 +2,7 @@ import {
   BookOpen,
   Award,
   Users,
+  UsersRound,
   BarChart3,
   LayoutDashboard,
   FolderOpen,
@@ -65,6 +66,12 @@ export const navSections: NavSection[] = [
         label: 'Tasks',
         href: '/instructor/tasks',
         icon: ClipboardList,
+        roles: ['instructor', 'admin'],
+      },
+      {
+        label: 'Committees',
+        href: '/instructor/committees',
+        icon: UsersRound,
         roles: ['instructor', 'admin'],
       },
       {
