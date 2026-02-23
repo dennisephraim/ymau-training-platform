@@ -19,10 +19,10 @@ interface ModalProps {
 }
 
 const sizeClasses = {
-  sm: 'max-w-sm',
-  md: 'max-w-md',
-  lg: 'max-w-lg',
-  xl: 'max-w-xl',
+  sm: 'max-w-md',
+  md: 'max-w-[34rem]',
+  lg: 'max-w-[40rem]',
+  xl: 'max-w-[45rem]',
   full: 'max-w-4xl',
 };
 
@@ -39,7 +39,7 @@ export function Modal({
   className,
 }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const handleEscape = useCallback(
     (e: KeyboardEvent) => {
@@ -68,6 +68,16 @@ export function Modal({
     };
   }, [isOpen, handleEscape]);
 
+  // Focus panel once on open — separate effect to avoid re-firing
+  // when handleEscape/onClose references change during typing
+  useEffect(() => {
+    if (isOpen) {
+      requestAnimationFrame(() => {
+        panelRef.current?.focus();
+      });
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const modalContent = (
@@ -77,11 +87,13 @@ export function Modal({
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-sm animate-fade-in overscroll-contain"
     >
       <div
-        ref={contentRef}
+        ref={panelRef}
+        tabIndex={-1}
         className={cn(
           'relative bg-white rounded-xl shadow-xl animate-slide-up',
-          'w-[calc(100vw-1.5rem)] sm:w-auto',
+          'w-[calc(100vw-1.5rem)] sm:w-full',
           'max-h-[85vh] overflow-y-auto overscroll-contain',
+          'focus:outline-none',
           sizeClasses[size],
           className
         )}
@@ -92,7 +104,7 @@ export function Modal({
       >
         {/* Header */}
         {(title || showCloseButton) && (
-          <div className="sticky top-0 flex items-start justify-between p-4 sm:p-5 border-b border-gray-100 bg-white rounded-t-xl">
+          <div className="sticky top-0 flex items-start justify-between p-4 sm:p-6 border-b border-gray-100 bg-white rounded-t-xl">
             <div className="min-w-0 pr-2">
               {title && (
                 <h2 id="modal-title" className="text-lg font-semibold text-gray-900">
@@ -123,7 +135,7 @@ export function Modal({
         )}
 
         {/* Content */}
-        <div className="p-4 sm:p-5">{children}</div>
+        <div className="p-4 sm:p-6">{children}</div>
       </div>
     </div>
   );
