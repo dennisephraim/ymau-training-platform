@@ -50,6 +50,8 @@ export interface TaskResponse {
   answers: TaskResponseAnswer[];
   fileUrl: string | null;
   fileName: string | null;
+  committeeId: string | null;
+  committeeName: string | null;
   submittedAt: Date;
 }
 
@@ -59,6 +61,8 @@ export interface TaskResponseDocument {
   answers: TaskResponseAnswer[];
   fileUrl: string | null;
   fileName: string | null;
+  committeeId: string | null;
+  committeeName: string | null;
   submittedAt: Date;
 }
 
