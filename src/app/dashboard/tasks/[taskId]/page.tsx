@@ -21,8 +21,14 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthContext';
 import { Task, TaskResponse, TaskResponseAnswer } from '@/types/task';
+import { Committee } from '@/types/committee';
 import * as taskService from '@/lib/services/tasks';
 import * as storageService from '@/lib/services/storage';
+import * as committeeService from '@/lib/services/committees';
+
+function isCommitteeQuestion(text: string): boolean {
+  return /committee/i.test(text);
+}
 
 export default function TaskDetailPage() {
   const params = useParams();
@@ -33,6 +39,7 @@ export default function TaskDetailPage() {
 
   const [task, setTask] = useState<Task | null>(null);
   const [existingResponse, setExistingResponse] = useState<TaskResponse | null>(null);
+  const [committee, setCommittee] = useState<Committee | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [file, setFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -45,9 +52,12 @@ export default function TaskDetailPage() {
 
     try {
       setLoading(true);
-      const [taskData, responseData] = await Promise.all([
+      const [taskData, responseData, committeeData] = await Promise.all([
         taskService.getTask(taskId),
         taskService.getUserTaskResponse(taskId, user.id),
+        user.committeeId
+          ? committeeService.getCommittee(user.committeeId)
+          : Promise.resolve(null),
       ]);
 
       if (!taskData) {
@@ -57,6 +67,7 @@ export default function TaskDetailPage() {
 
       setTask(taskData);
       setExistingResponse(responseData);
+      setCommittee(committeeData);
 
       // Pre-fill answers if there's an existing response
       if (responseData) {
@@ -64,12 +75,20 @@ export default function TaskDetailPage() {
         responseData.answers.forEach((a) => {
           answersMap[a.questionId] = a.answer;
         });
+        // Override committee questions with current committee name
+        taskData.questions.forEach((q) => {
+          if (isCommitteeQuestion(q.text)) {
+            answersMap[q.id] = committeeData?.name || '';
+          }
+        });
         setAnswers(answersMap);
       } else {
-        // Initialize empty answers
+        // Initialize empty answers, auto-filling committee questions
         const emptyAnswers: Record<string, string> = {};
         taskData.questions.forEach((q) => {
-          emptyAnswers[q.id] = '';
+          emptyAnswers[q.id] = isCommitteeQuestion(q.text)
+            ? (committeeData?.name || '')
+            : '';
         });
         setAnswers(emptyAnswers);
       }
@@ -147,7 +166,9 @@ export default function TaskDetailPage() {
         user.id,
         formattedAnswers,
         fileUrl,
-        fileName
+        fileName,
+        user.committeeId ?? null,
+        committee?.name ?? null,
       );
 
       // Redirect back to activities page
@@ -219,6 +240,7 @@ export default function TaskDetailPage() {
   
   // Check if all required questions are answered based on response type
   const allQuestionsAnswered = task.questions.every((q) => {
+    if (isCommitteeQuestion(q.text)) return true; // Always satisfied
     const responseType = q.responseType || 'text'; // Default to text for backwards compatibility
     if (responseType === 'file') {
       // File-only questions are satisfied by file upload OR existing file
@@ -277,6 +299,11 @@ export default function TaskDetailPage() {
                 File Upload
               </Badge>
             )}
+            {committee ? (
+              <Badge variant="info">{committee.name}</Badge>
+            ) : (
+              <Badge variant="default">No committee assigned</Badge>
+            )}
           </div>
           <h1 className="text-2xl font-bold text-gray-900">{task.title}</h1>
           <p className="text-gray-500 mt-1">{task.description}</p>
@@ -322,6 +349,7 @@ export default function TaskDetailPage() {
             .sort((a, b) => a.order - b.order)
             .map((question, index) => {
               const responseType = question.responseType || 'text';
+              const isAutoFilled = isCommitteeQuestion(question.text);
               return (
                 <div key={question.id} className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
@@ -340,20 +368,31 @@ export default function TaskDetailPage() {
                       </Badge>
                     )}
                   </div>
-                  {responseType !== 'file' && (
-                    <textarea
-                      value={answers[question.id] || ''}
-                      onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-                      placeholder={responseType === 'either' ? 'Enter your answer or upload a file below...' : 'Enter your answer...'}
-                      rows={3}
-                      disabled={submitting}
-                      className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-ymau-dark-red focus:outline-none focus:ring-1 focus:ring-ymau-dark-red disabled:bg-gray-50 disabled:text-gray-500"
-                    />
-                  )}
-                  {responseType === 'file' && (
-                    <p className="text-sm text-gray-500 italic">
-                      Please upload a file below to answer this question.
-                    </p>
+                  {isAutoFilled ? (
+                    <div>
+                      <div className="block w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-gray-700">
+                        {committee?.name || 'No committee assigned'}
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1">Automatically filled from your profile</p>
+                    </div>
+                  ) : (
+                    <>
+                      {responseType !== 'file' && (
+                        <textarea
+                          value={answers[question.id] || ''}
+                          onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                          placeholder={responseType === 'either' ? 'Enter your answer or upload a file below...' : 'Enter your answer...'}
+                          rows={3}
+                          disabled={submitting}
+                          className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-ymau-dark-red focus:outline-none focus:ring-1 focus:ring-ymau-dark-red disabled:bg-gray-50 disabled:text-gray-500"
+                        />
+                      )}
+                      {responseType === 'file' && (
+                        <p className="text-sm text-gray-500 italic">
+                          Please upload a file below to answer this question.
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
               );
