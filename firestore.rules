@@ -200,15 +200,6 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
     
-    // ============ RESOURCE FOLDERS COLLECTION ============
-    match /resourceFolders/{folderId} {
-      // Anyone authenticated can read resource folders
-      allow read: if isAuthenticated();
-
-      // Only instructors/admins can manage resource folders
-      allow create, update, delete: if isInstructorOrAdmin();
-    }
-
     // ============ COMMITTEES COLLECTION ============
     match /committees/{committeeId} {
       allow read: if isAuthenticated();
