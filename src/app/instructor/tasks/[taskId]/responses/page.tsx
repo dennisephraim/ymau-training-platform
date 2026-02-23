@@ -30,6 +30,10 @@ import * as committeeService from '@/lib/services/committees';
 import { useBulkDownload } from '@/lib/hooks/useBulkDownload';
 import { FileToDownload } from '@/lib/utils/bulkDownload';
 
+function isCommitteeQuestion(text: string): boolean {
+  return /committee/i.test(text);
+}
+
 interface ResponseWithUser extends TaskResponse {
   userName: string;
   userEmail: string;
@@ -116,18 +120,18 @@ export default function TaskResponsesPage() {
               ...response,
               userName: user?.displayName || 'Unknown User',
               userEmail: user?.email || '',
-              committeeId: user?.committeeId || null,
-              committeeName: user?.committeeId
-                ? committeeMap.get(user.committeeId) || 'Unknown'
-                : 'No committee',
+              committeeId: response.committeeId ?? user?.committeeId ?? null,
+              committeeName: response.committeeName
+                ?? (user?.committeeId ? committeeMap.get(user.committeeId) || 'Unknown' : null)
+                ?? 'No committee',
             };
           } catch {
             return {
               ...response,
               userName: 'Unknown User',
               userEmail: '',
-              committeeId: null,
-              committeeName: 'No committee',
+              committeeId: response.committeeId ?? null,
+              committeeName: response.committeeName ?? 'No committee',
             };
           }
         })
@@ -327,14 +331,37 @@ export default function TaskResponsesPage() {
                       const answer = response.answers.find(
                         (a) => a.questionId === question.id
                       );
+                      const responseType = question.responseType || 'text';
+                      const displayText = isCommitteeQuestion(question.text)
+                        ? response.committeeName
+                        : answer?.answer;
+
+                      // For file-only questions, show file reference instead of text box
+                      const isFileOnly = responseType === 'file';
+                      // For 'either' questions with no text but a file uploaded
+                      const isFileInstead = responseType === 'either' && !displayText && response.fileUrl;
+
                       return (
                         <div key={question.id} className="space-y-1">
                           <p className="text-sm font-medium text-gray-700">
                             {index + 1}. {question.text}
                           </p>
-                          <p className="text-sm text-gray-600 bg-white p-3 rounded-lg border border-gray-200">
-                            {answer?.answer || <span className="text-gray-400 italic">No answer provided</span>}
-                          </p>
+                          {isFileOnly || isFileInstead ? (
+                            <p className="text-sm text-gray-600 bg-white p-3 rounded-lg border border-gray-200 flex items-center gap-2">
+                              {response.fileUrl ? (
+                                <>
+                                  <FileText className="h-4 w-4 text-gray-400" />
+                                  See attached file below
+                                </>
+                              ) : (
+                                <span className="text-gray-400 italic">No file attached</span>
+                              )}
+                            </p>
+                          ) : (
+                            <p className="text-sm text-gray-600 bg-white p-3 rounded-lg border border-gray-200">
+                              {displayText || <span className="text-gray-400 italic">No answer provided</span>}
+                            </p>
+                          )}
                         </div>
                       );
                     })}
