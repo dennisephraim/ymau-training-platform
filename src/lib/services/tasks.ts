@@ -258,6 +258,8 @@ export async function getTaskResponses(taskId: string): Promise<TaskResponse[]> 
     return {
       id: doc.id,
       ...data,
+      committeeId: data.committeeId || null,
+      committeeName: data.committeeName || null,
       submittedAt: toDate(data.submittedAt as Timestamp | Date),
     };
   });
@@ -278,6 +280,8 @@ export async function getUserTaskResponses(userId: string): Promise<TaskResponse
     return {
       id: doc.id,
       ...data,
+      committeeId: data.committeeId || null,
+      committeeName: data.committeeName || null,
       submittedAt: toDate(data.submittedAt as Timestamp | Date),
     };
   });
@@ -307,6 +311,8 @@ export async function getUserTaskResponse(
   return {
     id: doc.id,
     ...data,
+    committeeId: data.committeeId || null,
+    committeeName: data.committeeName || null,
     submittedAt: toDate(data.submittedAt as Timestamp | Date),
   };
 }
@@ -319,13 +325,15 @@ export async function submitTaskResponse(
   userId: string,
   answers: TaskResponseAnswer[],
   fileUrl: string | null = null,
-  fileName: string | null = null
+  fileName: string | null = null,
+  committeeId: string | null = null,
+  committeeName: string | null = null,
 ): Promise<string> {
   if (!db) throw new Error('Firestore not initialized');
 
   // Check for existing response
   const existing = await getUserTaskResponse(taskId, userId);
-  
+
   if (existing) {
     // Update existing response
     const responseRef = doc(db, 'taskResponses', existing.id);
@@ -333,6 +341,8 @@ export async function submitTaskResponse(
       answers,
       fileUrl,
       fileName,
+      committeeId,
+      committeeName,
       submittedAt: serverTimestamp(),
     });
     return existing.id;
@@ -346,6 +356,8 @@ export async function submitTaskResponse(
     answers,
     fileUrl,
     fileName,
+    committeeId,
+    committeeName,
     submittedAt: serverTimestamp(),
   });
 
