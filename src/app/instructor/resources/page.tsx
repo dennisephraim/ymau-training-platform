@@ -23,11 +23,14 @@ import {
   FileSpreadsheet,
   Presentation,
   FolderOpen,
+  FolderPlus,
+  Folder,
   Calendar,
   X,
+  ChevronRight,
 } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthContext';
-import { Resource } from '@/types/resource';
+import { Resource, ResourceFolder } from '@/types/resource';
 import { UserRole } from '@/types/user';
 import * as resourceService from '@/lib/services/resources';
 import * as storageService from '@/lib/services/storage';
@@ -43,33 +46,58 @@ export default function InstructorResourcesPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [resources, setResources] = useState<Resource[]>([]);
+  const [folders, setFolders] = useState<ResourceFolder[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showFolderModal, setShowFolderModal] = useState(false);
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
 
   // Upload form state
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [visibleToRoles, setVisibleToRoles] = useState<UserRole[]>(['student']);
+  const [uploadFolderId, setUploadFolderId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchResources = useCallback(async () => {
+  // Folder form state
+  const [folderName, setFolderName] = useState('');
+  const [folderDescription, setFolderDescription] = useState('');
+  const [folderRoles, setFolderRoles] = useState<UserRole[]>(['student']);
+  const [folderError, setFolderError] = useState<string | null>(null);
+  const [savingFolder, setSavingFolder] = useState(false);
+
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await resourceService.getAllResources();
-      setResources(data);
+      const [resourcesData, foldersData] = await Promise.all([
+        resourceService.getAllResources(),
+        resourceService.getAllFolders(),
+      ]);
+      setResources(resourcesData);
+      setFolders(foldersData);
     } catch (err) {
-      console.error('Error fetching resources:', err);
+      console.error('Error fetching data:', err);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchResources();
-  }, [fetchResources]);
+    fetchData();
+  }, [fetchData]);
+
+  // Derived data
+  const currentFolder = folders.find((f) => f.id === currentFolderId) || null;
+
+  const displayedResources = resources.filter((r) =>
+    currentFolderId ? r.folderId === currentFolderId : !r.folderId
+  );
+
+  const getFolderResourceCount = (folderId: string) =>
+    resources.filter((r) => r.folderId === folderId).length;
 
   const getFileIcon = (fileType: string) => {
     if (fileType.startsWith('image/')) return Image;
@@ -104,7 +132,6 @@ export default function InstructorResourcesPage() {
         return;
       }
       setFile(selectedFile);
-      // Auto-fill title if empty
       if (!title) {
         setTitle(selectedFile.name.replace(/\.[^/.]+$/, ''));
       }
@@ -125,16 +152,42 @@ export default function InstructorResourcesPage() {
     setError(null);
   };
 
-  const resetForm = () => {
+  const toggleFolderRole = (role: UserRole) => {
+    if (folderRoles.includes(role)) {
+      if (folderRoles.length === 1) {
+        setFolderError('At least one role must be selected');
+        return;
+      }
+      setFolderRoles(folderRoles.filter((r) => r !== role));
+    } else {
+      setFolderRoles([...folderRoles, role]);
+    }
+    setFolderError(null);
+  };
+
+  const resetUploadForm = () => {
     setTitle('');
     setDescription('');
     setFile(null);
     setVisibleToRoles(['student']);
+    setUploadFolderId(null);
     setError(null);
     setUploadProgress(0);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const resetFolderForm = () => {
+    setFolderName('');
+    setFolderDescription('');
+    setFolderRoles(['student']);
+    setFolderError(null);
+  };
+
+  const openUploadModal = () => {
+    setUploadFolderId(currentFolderId);
+    setShowUploadModal(true);
   };
 
   const handleUpload = async () => {
@@ -149,10 +202,8 @@ export default function InstructorResourcesPage() {
       setUploading(true);
       setError(null);
 
-      // Generate temporary ID for storage path
       const tempId = crypto.randomUUID();
 
-      // Upload file
       const fileUrl = await storageService.uploadResourceFile(
         tempId,
         file,
@@ -161,7 +212,6 @@ export default function InstructorResourcesPage() {
         }
       );
 
-      // Create resource record
       await resourceService.createResource({
         title: title.trim(),
         description: description.trim(),
@@ -169,15 +219,15 @@ export default function InstructorResourcesPage() {
         fileName: file.name,
         fileSize: file.size,
         fileType: file.type,
+        folderId: uploadFolderId,
         visibleToRoles,
         uploadedBy: user.id,
         uploadedByName: user.displayName,
       });
 
-      // Refresh list and close modal
-      await fetchResources();
-      setShowModal(false);
-      resetForm();
+      await fetchData();
+      setShowUploadModal(false);
+      resetUploadForm();
     } catch (err) {
       console.error('Error uploading resource:', err);
       setError('Failed to upload resource. Please try again.');
@@ -186,7 +236,58 @@ export default function InstructorResourcesPage() {
     }
   };
 
-  const handleDelete = async (resourceId: string) => {
+  const handleCreateFolder = async () => {
+    if (!user) return;
+
+    if (!folderName.trim()) {
+      setFolderError('Folder name is required');
+      return;
+    }
+
+    try {
+      setSavingFolder(true);
+      setFolderError(null);
+
+      await resourceService.createFolder({
+        name: folderName.trim(),
+        description: folderDescription.trim(),
+        createdBy: user.id,
+        visibleToRoles: folderRoles,
+      });
+
+      await fetchData();
+      setShowFolderModal(false);
+      resetFolderForm();
+    } catch (err) {
+      console.error('Error creating folder:', err);
+      setFolderError('Failed to create folder. Please try again.');
+    } finally {
+      setSavingFolder(false);
+    }
+  };
+
+  const handleDeleteFolder = async (folderId: string) => {
+    const folder = folders.find((f) => f.id === folderId);
+    const count = getFolderResourceCount(folderId);
+    const message = count > 0
+      ? `Delete "${folder?.name}"? ${count} resource${count !== 1 ? 's' : ''} inside will be moved to root.`
+      : `Delete "${folder?.name}"?`;
+
+    if (!confirm(message)) return;
+
+    try {
+      await resourceService.deleteFolder(folderId);
+      if (currentFolderId === folderId) {
+        setCurrentFolderId(null);
+      }
+      await fetchData();
+    } catch (err) {
+      console.error('Error deleting folder:', err);
+      alert('Failed to delete folder');
+    }
+  };
+
+  const handleDeleteResource = async (resourceId: string) => {
     if (!confirm('Are you sure you want to delete this resource? This action cannot be undone.')) {
       return;
     }
@@ -227,97 +328,86 @@ export default function InstructorResourcesPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Resources</h1>
-          <p className="text-gray-500 mt-1">
-            Upload and manage downloadable files for delegates
-          </p>
+          {currentFolder ? (
+            <>
+              <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
+                <button
+                  onClick={() => setCurrentFolderId(null)}
+                  className="hover:text-ymau-dark-red transition-colors"
+                >
+                  Resources
+                </button>
+                <ChevronRight className="h-4 w-4" />
+                <span className="text-gray-900 font-medium">{currentFolder.name}</span>
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900">{currentFolder.name}</h1>
+              {currentFolder.description && (
+                <p className="text-gray-500 mt-1">{currentFolder.description}</p>
+              )}
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl font-bold text-gray-900">Resources</h1>
+              <p className="text-gray-500 mt-1">
+                Upload and manage downloadable files for delegates
+              </p>
+            </>
+          )}
         </div>
-        <Button onClick={() => setShowModal(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Upload Resource
-        </Button>
+        <div className="flex gap-2">
+          {!currentFolderId && (
+            <Button variant="outline" onClick={() => setShowFolderModal(true)}>
+              <FolderPlus className="h-4 w-4 mr-2" />
+              New Folder
+            </Button>
+          )}
+          <Button onClick={openUploadModal}>
+            <Plus className="h-4 w-4 mr-2" />
+            Upload Resource
+          </Button>
+        </div>
       </div>
 
-      {/* Resources Grid */}
-      {resources.length === 0 ? (
-        <Card className="border-dashed border-2 border-ymau-dark-red/30 bg-ymau-dark-red/5">
-          <CardContent className="py-12">
-            <EmptyState
-              icon={<FolderOpen className="h-8 w-8" />}
-              title="No Resources Yet"
-              description="Upload your first resource to make it available for download."
-              action={
-                <Button onClick={() => setShowModal(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Upload Resource
-                </Button>
-              }
-            />
-          </CardContent>
-        </Card>
-      ) : (
+      {/* Folder Cards (only at root) */}
+      {!currentFolderId && folders.length > 0 && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {resources.map((resource) => {
-            const FileIcon = getFileIcon(resource.fileType);
-            
+          {folders.map((folder) => {
+            const count = getFolderResourceCount(folder.id);
             return (
               <div
-                key={resource.id}
-                className="bg-white rounded-xl border border-gray-200 p-5 hover:border-ymau-dark-red/30 transition-colors"
+                key={folder.id}
+                className="bg-white rounded-xl border border-gray-200 p-5 hover:border-ymau-dark-red/30 transition-colors cursor-pointer group"
+                onClick={() => setCurrentFolderId(folder.id)}
               >
                 <div className="flex items-start gap-4">
-                  <div className="p-3 rounded-lg bg-ymau-dark-red/10 shrink-0">
-                    <FileIcon className="h-6 w-6 text-ymau-dark-red" />
+                  <div className="p-3 rounded-lg bg-amber-100 shrink-0">
+                    <Folder className="h-6 w-6 text-amber-600" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-gray-900 truncate">
-                      {resource.title}
+                      {folder.name}
                     </h3>
-                    <p className="text-sm text-gray-500 line-clamp-2 mt-1">
-                      {resource.description || resource.fileName}
+                    <p className="text-sm text-gray-500 mt-1">
+                      {count} resource{count !== 1 ? 's' : ''}
                     </p>
                   </div>
                 </div>
-
-                {/* Meta Info */}
-                <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-gray-500">
-                  <span className="flex items-center gap-1">
-                    <File className="h-3 w-3" />
-                    {formatFileSize(resource.fileSize)}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Calendar className="h-3 w-3" />
-                    {formatDate(resource.createdAt)}
-                  </span>
-                </div>
-
-                {/* Visible to roles */}
                 <div className="mt-3 flex flex-wrap gap-1">
-                  {resource.visibleToRoles.map((role) => (
+                  {folder.visibleToRoles.map((role) => (
                     <Badge key={role} variant="primary" size="sm">
                       {role}
                     </Badge>
                   ))}
                 </div>
-
-                {/* Actions */}
-                <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-                  <a
-                    href={resource.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    download={resource.fileName}
-                  >
-                    <Button size="sm" variant="ghost">
-                      <Download className="h-4 w-4 mr-1" />
-                      Download
-                    </Button>
-                  </a>
+                <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-end">
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => handleDelete(resource.id)}
-                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteFolder(folder.id);
+                    }}
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -328,13 +418,109 @@ export default function InstructorResourcesPage() {
         </div>
       )}
 
+      {/* Resources Grid */}
+      {displayedResources.length === 0 && (!currentFolderId ? folders.length === 0 : true) ? (
+        <Card className="border-dashed border-2 border-ymau-dark-red/30 bg-ymau-dark-red/5">
+          <CardContent className="py-12">
+            <EmptyState
+              icon={<FolderOpen className="h-8 w-8" />}
+              title={currentFolderId ? 'No Resources in Folder' : 'No Resources Yet'}
+              description={
+                currentFolderId
+                  ? 'Upload a resource to add it to this folder.'
+                  : 'Upload your first resource to make it available for download.'
+              }
+              action={
+                <Button onClick={openUploadModal}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Upload Resource
+                </Button>
+              }
+            />
+          </CardContent>
+        </Card>
+      ) : displayedResources.length > 0 ? (
+        <>
+          {!currentFolderId && folders.length > 0 && (
+            <h2 className="text-lg font-semibold text-gray-900">Ungrouped Resources</h2>
+          )}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {displayedResources.map((resource) => {
+              const FileIcon = getFileIcon(resource.fileType);
+
+              return (
+                <div
+                  key={resource.id}
+                  className="bg-white rounded-xl border border-gray-200 p-5 hover:border-ymau-dark-red/30 transition-colors"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 rounded-lg bg-ymau-dark-red/10 shrink-0">
+                      <FileIcon className="h-6 w-6 text-ymau-dark-red" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-900 truncate">
+                        {resource.title}
+                      </h3>
+                      <p className="text-sm text-gray-500 line-clamp-2 mt-1">
+                        {resource.description || resource.fileName}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                    <span className="flex items-center gap-1">
+                      <File className="h-3 w-3" />
+                      {formatFileSize(resource.fileSize)}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      {formatDate(resource.createdAt)}
+                    </span>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap gap-1">
+                    {resource.visibleToRoles.map((role) => (
+                      <Badge key={role} variant="primary" size="sm">
+                        {role}
+                      </Badge>
+                    ))}
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                    <a
+                      href={resource.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      download={resource.fileName}
+                    >
+                      <Button size="sm" variant="ghost">
+                        <Download className="h-4 w-4 mr-1" />
+                        Download
+                      </Button>
+                    </a>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleDeleteResource(resource.id)}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      ) : null}
+
       {/* Upload Modal */}
       <Modal
-        isOpen={showModal}
+        isOpen={showUploadModal}
         onClose={() => {
           if (!uploading) {
-            setShowModal(false);
-            resetForm();
+            setShowUploadModal(false);
+            resetUploadForm();
           }
         }}
         title="Upload Resource"
@@ -409,6 +595,26 @@ export default function InstructorResourcesPage() {
             />
           </div>
 
+          {/* Folder */}
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700">
+              Folder <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <select
+              value={uploadFolderId || ''}
+              onChange={(e) => setUploadFolderId(e.target.value || null)}
+              disabled={uploading}
+              className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-ymau-dark-red focus:outline-none focus:ring-1 focus:ring-ymau-dark-red disabled:bg-gray-50"
+            >
+              <option value="">No folder (root)</option>
+              {folders.map((folder) => (
+                <option key={folder.id} value={folder.id}>
+                  {folder.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Visible to Roles */}
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
@@ -449,8 +655,8 @@ export default function InstructorResourcesPage() {
             <Button
               variant="ghost"
               onClick={() => {
-                setShowModal(false);
-                resetForm();
+                setShowUploadModal(false);
+                resetUploadForm();
               }}
               disabled={uploading}
             >
@@ -463,6 +669,92 @@ export default function InstructorResourcesPage() {
             >
               <Upload className="h-4 w-4 mr-2" />
               Upload
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* New Folder Modal */}
+      <Modal
+        isOpen={showFolderModal}
+        onClose={() => {
+          if (!savingFolder) {
+            setShowFolderModal(false);
+            resetFolderForm();
+          }
+        }}
+        title="Create Folder"
+      >
+        <div className="space-y-4">
+          {folderError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+              {folderError}
+            </div>
+          )}
+
+          <Input
+            label="Name"
+            value={folderName}
+            onChange={(e) => setFolderName(e.target.value)}
+            placeholder="Folder name"
+            disabled={savingFolder}
+          />
+
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700">
+              Description <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <textarea
+              value={folderDescription}
+              onChange={(e) => setFolderDescription(e.target.value)}
+              placeholder="Brief description..."
+              rows={2}
+              disabled={savingFolder}
+              className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-ymau-dark-red focus:outline-none focus:ring-1 focus:ring-ymau-dark-red disabled:bg-gray-50"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <Users className="h-4 w-4" />
+              Visible to Roles
+            </label>
+            <div className="flex gap-2 flex-wrap">
+              {ROLES.map((role) => (
+                <button
+                  key={role.value}
+                  onClick={() => toggleFolderRole(role.value)}
+                  disabled={savingFolder}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
+                    folderRoles.includes(role.value)
+                      ? 'bg-ymau-dark-red text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {role.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setShowFolderModal(false);
+                resetFolderForm();
+              }}
+              disabled={savingFolder}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateFolder}
+              disabled={!folderName.trim() || savingFolder}
+              isLoading={savingFolder}
+            >
+              <FolderPlus className="h-4 w-4 mr-2" />
+              Create Folder
             </Button>
           </div>
         </div>

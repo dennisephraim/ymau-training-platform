@@ -170,6 +170,7 @@ export function InstructorPicker({
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         title="Add Instructor"
+        size="lg"
       >
         <div className="space-y-4">
           {/* Search */}

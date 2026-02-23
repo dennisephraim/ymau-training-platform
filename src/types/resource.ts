@@ -8,6 +8,7 @@ export interface Resource {
   fileName: string;
   fileSize: number;
   fileType: string;
+  folderId: string | null;
   visibleToRoles: UserRole[];
   uploadedBy: string;
   uploadedByName: string;
@@ -22,9 +23,29 @@ export interface ResourceDocument {
   fileName: string;
   fileSize: number;
   fileType: string;
+  folderId: string | null;
   visibleToRoles: UserRole[];
   uploadedBy: string;
   uploadedByName: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ResourceFolder {
+  id: string;
+  name: string;
+  description: string;
+  createdBy: string;
+  visibleToRoles: UserRole[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ResourceFolderDocument {
+  name: string;
+  description: string;
+  createdBy: string;
+  visibleToRoles: UserRole[];
   createdAt: Date;
   updatedAt: Date;
 }

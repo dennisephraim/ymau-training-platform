@@ -79,7 +79,7 @@ export default function NewTaskPage() {
     const newQuestions = [...questions];
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
     [newQuestions[index], newQuestions[targetIndex]] = [newQuestions[targetIndex], newQuestions[index]];
-    
+
     setQuestions(newQuestions.map((q, i) => ({ ...q, order: i })));
   };
 

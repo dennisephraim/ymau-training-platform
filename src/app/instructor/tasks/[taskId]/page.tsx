@@ -66,7 +66,7 @@ export default function EditTaskPage() {
       setIsPublished(task.isPublished);
       setInstructorIds(task.instructorIds || []);
       setCreatedBy(task.createdBy);
-      
+
       if (task.dueDate) {
         // Format date for datetime-local input
         const d = new Date(task.dueDate);
@@ -119,7 +119,7 @@ export default function EditTaskPage() {
     const newQuestions = [...questions];
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
     [newQuestions[index], newQuestions[targetIndex]] = [newQuestions[targetIndex], newQuestions[index]];
-    
+
     setQuestions(newQuestions.map((q, i) => ({ ...q, order: i })));
   };
 

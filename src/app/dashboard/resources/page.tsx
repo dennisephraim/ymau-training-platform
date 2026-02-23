@@ -17,36 +17,62 @@ import {
   FileSpreadsheet,
   Presentation,
   FolderOpen,
+  Folder,
   Calendar,
   User,
+  ChevronRight,
 } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthContext';
-import { Resource } from '@/types/resource';
+import { Resource, ResourceFolder } from '@/types/resource';
 import * as resourceService from '@/lib/services/resources';
 
 export default function ResourcesPage() {
   const { user } = useAuth();
   const [resources, setResources] = useState<Resource[]>([]);
+  const [folders, setFolders] = useState<ResourceFolder[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
 
-  const fetchResources = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     if (!user) return;
 
     try {
       setLoading(true);
-      const data = await resourceService.getResourcesByRole(user.role);
-      setResources(data);
+      const [resourcesData, foldersData] = await Promise.all([
+        resourceService.getResourcesByRole(user.role),
+        resourceService.getFoldersByRole(user.role),
+      ]);
+      setResources(resourcesData);
+      setFolders(foldersData);
     } catch (err) {
-      console.error('Error fetching resources:', err);
+      console.error('Error fetching data:', err);
     } finally {
       setLoading(false);
     }
   }, [user]);
 
   useEffect(() => {
-    fetchResources();
-  }, [fetchResources]);
+    fetchData();
+  }, [fetchData]);
+
+  const currentFolder = folders.find((f) => f.id === currentFolderId) || null;
+  const isSearching = searchQuery.length > 0;
+
+  // When searching, flatten across all folders
+  const filteredResources = isSearching
+    ? resources.filter(
+        (resource) =>
+          resource.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          resource.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          resource.fileName.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : resources.filter((r) =>
+        currentFolderId ? r.folderId === currentFolderId : !r.folderId
+      );
+
+  const getFolderResourceCount = (folderId: string) =>
+    resources.filter((r) => r.folderId === folderId).length;
 
   const getFileIcon = (fileType: string) => {
     if (fileType.startsWith('image/')) return Image;
@@ -72,12 +98,6 @@ export default function ResourcesPage() {
       year: 'numeric',
     }).format(date);
   };
-
-  const filteredResources = resources.filter((resource) =>
-    resource.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    resource.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    resource.fileName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   if (loading) {
     return (
@@ -108,13 +128,34 @@ export default function ResourcesPage() {
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Resources</h1>
-        <p className="text-gray-500 mt-1">
-          {resources.length > 0
-            ? `${resources.length} resource${resources.length !== 1 ? 's' : ''} available for download`
-            : 'Downloadable files and materials'
-          }
-        </p>
+        {currentFolder && !isSearching ? (
+          <>
+            <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
+              <button
+                onClick={() => setCurrentFolderId(null)}
+                className="hover:text-ymau-dark-red transition-colors"
+              >
+                Resources
+              </button>
+              <ChevronRight className="h-4 w-4" />
+              <span className="text-gray-900 font-medium">{currentFolder.name}</span>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900">{currentFolder.name}</h1>
+            {currentFolder.description && (
+              <p className="text-gray-500 mt-1">{currentFolder.description}</p>
+            )}
+          </>
+        ) : (
+          <>
+            <h1 className="text-2xl font-bold text-gray-900">Resources</h1>
+            <p className="text-gray-500 mt-1">
+              {resources.length > 0
+                ? `${resources.length} resource${resources.length !== 1 ? 's' : ''} available for download`
+                : 'Downloadable files and materials'
+              }
+            </p>
+          </>
+        )}
       </div>
 
       {/* Search */}
@@ -125,9 +166,47 @@ export default function ResourcesPage() {
             type="text"
             placeholder="Search resources..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              if (e.target.value) setCurrentFolderId(null);
+            }}
             className="pl-10"
           />
+        </div>
+      )}
+
+      {/* Folder Cards (only at root, not when searching) */}
+      {!currentFolderId && !isSearching && folders.length > 0 && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {folders.map((folder) => {
+            const count = getFolderResourceCount(folder.id);
+            return (
+              <div
+                key={folder.id}
+                className="bg-white rounded-xl border border-gray-200 p-5 hover:border-ymau-dark-red/30 hover:shadow-lg hover:shadow-ymau-dark-red/10 transition-all duration-300 cursor-pointer"
+                onClick={() => setCurrentFolderId(folder.id)}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-lg bg-amber-100 shrink-0">
+                    <Folder className="h-6 w-6 text-amber-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-gray-900 truncate">
+                      {folder.name}
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {count} resource{count !== 1 ? 's' : ''}
+                    </p>
+                    {folder.description && (
+                      <p className="text-sm text-gray-500 line-clamp-2 mt-1">
+                        {folder.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -146,70 +225,77 @@ export default function ResourcesPage() {
         <Card className="border-dashed border-2 border-gray-300 bg-gray-50">
           <CardContent className="py-12">
             <EmptyState
-              icon={<Search className="h-8 w-8" />}
-              title="No Results Found"
-              description={`No resources match "${searchQuery}". Try a different search term.`}
+              icon={isSearching ? <Search className="h-8 w-8" /> : <FolderOpen className="h-8 w-8" />}
+              title={isSearching ? 'No Results Found' : 'No Resources in Folder'}
+              description={
+                isSearching
+                  ? `No resources match "${searchQuery}". Try a different search term.`
+                  : 'This folder is empty.'
+              }
             />
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredResources.map((resource) => {
-            const FileIcon = getFileIcon(resource.fileType);
-            
-            return (
-              <div
-                key={resource.id}
-                className="bg-white rounded-xl border border-gray-200 p-5 hover:border-ymau-dark-red/30 hover:shadow-lg hover:shadow-ymau-dark-red/10 transition-all duration-300"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="p-3 rounded-lg bg-ymau-dark-red/10 shrink-0">
-                    <FileIcon className="h-6 w-6 text-ymau-dark-red" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-900 truncate">
-                      {resource.title}
-                    </h3>
-                    <p className="text-sm text-gray-500 line-clamp-2 mt-1">
-                      {resource.description || resource.fileName}
-                    </p>
-                  </div>
-                </div>
+        <>
+          {!currentFolderId && !isSearching && folders.length > 0 && (
+            <h2 className="text-lg font-semibold text-gray-900">Ungrouped Resources</h2>
+          )}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filteredResources.map((resource) => {
+              const FileIcon = getFileIcon(resource.fileType);
 
-                {/* Meta Info */}
-                <div className="mt-4 flex items-center gap-4 text-xs text-gray-500">
-                  <span className="flex items-center gap-1">
-                    <File className="h-3 w-3" />
-                    {formatFileSize(resource.fileSize)}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Calendar className="h-3 w-3" />
-                    {formatDate(resource.createdAt)}
-                  </span>
-                </div>
+              return (
+                <div
+                  key={resource.id}
+                  className="bg-white rounded-xl border border-gray-200 p-5 hover:border-ymau-dark-red/30 hover:shadow-lg hover:shadow-ymau-dark-red/10 transition-all duration-300"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 rounded-lg bg-ymau-dark-red/10 shrink-0">
+                      <FileIcon className="h-6 w-6 text-ymau-dark-red" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-900 truncate">
+                        {resource.title}
+                      </h3>
+                      <p className="text-sm text-gray-500 line-clamp-2 mt-1">
+                        {resource.description || resource.fileName}
+                      </p>
+                    </div>
+                  </div>
 
-                {/* Footer */}
-                <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-                  <span className="text-xs text-gray-500 flex items-center gap-1">
-                    <User className="h-3 w-3" />
-                    {resource.uploadedByName}
-                  </span>
-                  <a
-                    href={resource.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    download={resource.fileName}
-                  >
-                    <Button size="sm" variant="outline">
-                      <Download className="h-4 w-4 mr-1" />
-                      Download
-                    </Button>
-                  </a>
+                  <div className="mt-4 flex items-center gap-4 text-xs text-gray-500">
+                    <span className="flex items-center gap-1">
+                      <File className="h-3 w-3" />
+                      {formatFileSize(resource.fileSize)}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      {formatDate(resource.createdAt)}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                    <span className="text-xs text-gray-500 flex items-center gap-1">
+                      <User className="h-3 w-3" />
+                      {resource.uploadedByName}
+                    </span>
+                    <a
+                      href={resource.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      download={resource.fileName}
+                    >
+                      <Button size="sm" variant="outline">
+                        <Download className="h-4 w-4 mr-1" />
+                        Download
+                      </Button>
+                    </a>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        </>
       )}
     </div>
   );
